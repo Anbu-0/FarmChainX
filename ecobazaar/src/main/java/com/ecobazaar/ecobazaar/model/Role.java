@@ -1,11 +1,11 @@
 package com.ecobazaar.ecobazaar.model;
 
 import jakarta.persistence.*;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Set;
 
 @Entity
-@Table(name = "role")
+@Table(name = "roles")
 public class Role {
 
     @Id
@@ -17,6 +17,7 @@ public class Role {
     private String name;  
 
     @ManyToMany(mappedBy = "roles")
+    @JsonIgnore
     private Set<User> users;
 
 

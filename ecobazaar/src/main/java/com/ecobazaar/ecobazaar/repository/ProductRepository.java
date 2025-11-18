@@ -1,6 +1,7 @@
 package com.ecobazaar.ecobazaar.repository;
 
 import com.ecobazaar.ecobazaar.model.Product;
+import com.ecobazaar.ecobazaar.model.User;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

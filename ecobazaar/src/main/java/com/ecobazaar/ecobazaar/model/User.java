@@ -1,8 +1,7 @@
 package com.ecobazaar.ecobazaar.model;
 
 import jakarta.persistence.*;
-
-import java.util.ArrayList;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.*;
 
 
@@ -32,6 +31,7 @@ public class User {
 	private Set<Role> roles = new HashSet<>();
 	
 	@OneToMany(mappedBy = "farmer", cascade = CascadeType.ALL, orphanRemoval = true)
+	@JsonIgnore
 	
 	private List<Product> products = new ArrayList<>();
 	

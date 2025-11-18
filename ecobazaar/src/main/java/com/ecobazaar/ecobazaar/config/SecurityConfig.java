@@ -11,6 +11,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpMethod;
 
 import com.ecobazaar.ecobazaar.jwt.JwtAuthenticationFilter;
 
@@ -41,8 +43,19 @@ public class SecurityConfig {
             // Disable CSRF because we use JWT, not cookies
             .csrf(csrf -> csrf.disable())
             
-            // ✅ Allow controller exceptions to reach client instead of being converted to 403
-            .exceptionHandling(ex -> ex.authenticationEntryPoint((req, res, e) -> {}))
+         // Return JSON 401/403 so frontend can read the exact reason
+            .exceptionHandling(ex -> ex
+                    .authenticationEntryPoint((request, response, authException) -> {
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.setContentType("application/json");
+                        response.getWriter().write("{\"error\":\"Unauthorized\"}");
+                    })
+                    .accessDeniedHandler((request, response, accessDeniedException) -> {
+                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        response.setContentType("application/json");
+                        response.getWriter().write("{\"error\":\"Forbidden\"}");
+                    })
+                )
 
          // 🔒 Stateless session (JWT-based)
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -53,7 +66,7 @@ public class SecurityConfig {
             		// ✅ MUST BE FIRST to avoid 403 on register/login
                     .requestMatchers("/api/auth/**").permitAll()
 
-                    // ✅ Allow Spring Boot default error page (prevents AuthorizationDeniedException logs)
+                 // Allow Spring Boot default error page
                     .requestMatchers("/error").permitAll()
                     
             		// ✅ feedback route MUST come before /api/products/**
@@ -66,8 +79,8 @@ public class SecurityConfig {
                             "/api/products/*/qrcode/download"  // QR image download
                     ).permitAll()
 
-                 // ✅ Public product viewing
-                    .requestMatchers("/api/products", "/api/products/*").permitAll()
+                 // Public product viewing for GETs
+                    .requestMatchers(HttpMethod.GET, "/api/products", "/api/products/*").permitAll()
 
                  // ✅ Product modification for roles
                     .requestMatchers("/api/products/**")
