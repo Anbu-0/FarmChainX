@@ -1,32 +1,44 @@
 package com.ecobazaar.ecobazaar.util;
 
-import java.io.IOException;
-import java.nio.file.FileSystem;
+import java.io.File;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.google.zxing.BarcodeFormat;
-import com.google.zxing.WriterException;
+import com.google.zxing.EncodeHintType;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 
 public class QrCodeGenerator {
 
-	public static String generateQR(String text, String filePath)throws IOException, WriterException {
-		
-		// Step 1: Create QR code data from text (product info or link)
-		QRCodeWriter qrCodeWriter = new QRCodeWriter();
-		
-		// Step 2: Generate a QR matrix (pixels)
-		BitMatrix bitMatrix  = qrCodeWriter.encode(text, BarcodeFormat.QR_CODE, 300, 300);
-		
-		// Step 3: Convert matrix → actual PNG image and save it
-		Path path = FileSystems.getDefault().getPath(filePath);
-		
-		MatrixToImageWriter.writeToPath(bitMatrix, "PNG", path);
-		
-		// Step 4: Return the file path for saving in DB
-		return filePath;
-	}
+	public static String generateQR(String text, String filePath) throws Exception {
+
+        // Ensure parent folder exists
+        File file = new File(filePath);
+        File parent = file.getParentFile();
+        if (parent != null && !parent.exists()) {
+            if (!parent.mkdirs()) {
+                throw new RuntimeException("❌ Failed to create directory: " + parent.getAbsolutePath());
+            }
+        }
+
+        int size = 300;
+
+        // QR options
+        Map<EncodeHintType, Object> hints = new HashMap<>();
+        hints.put(EncodeHintType.MARGIN, 1);
+
+        // Generate QR matrix
+        QRCodeWriter writer = new QRCodeWriter();
+        BitMatrix bitMatrix = writer.encode(text, BarcodeFormat.QR_CODE, size, size, hints);
+
+        // Write PNG file
+        Path path = FileSystems.getDefault().getPath(filePath);
+        MatrixToImageWriter.writeToPath(bitMatrix, "PNG", path);
+
+        return filePath;
+    }
 }

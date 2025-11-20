@@ -20,22 +20,40 @@ public class SupplyChainLog {
     private String prevHash;         // Hash of previous block
     private String hash;             // Hash of this block for verification
 
+    @Column(name = "created_by")
+    private String createdBy;
   
     public SupplyChainLog() {
     }
 
-    public SupplyChainLog(Long productId, Long fromUserId, Long toUserId,
-                          LocalDateTime timestamp, String location, String notes,
-                          String prevHash, String hash) {
-        this.productId = productId;
-        this.fromUserId = fromUserId;
-        this.toUserId = toUserId;
-        this.timestamp = timestamp;
-        this.location = location;
-        this.notes = notes;
-        this.prevHash = prevHash;
-        this.hash = hash;
-    }
+    public SupplyChainLog(Long id, Long productId, Long fromUserId, Long toUserId, LocalDateTime timestamp,
+			String location, String notes, String prevHash, String hash, String createdBy) {
+		super();
+		this.id = id;
+		this.productId = productId;
+		this.fromUserId = fromUserId;
+		this.toUserId = toUserId;
+		this.timestamp = timestamp;
+		this.location = location;
+		this.notes = notes;
+		this.prevHash = prevHash;
+		this.hash = hash;
+		this.createdBy = createdBy;
+	}
+
+
+
+
+	public String getCreatedBy() {
+		return createdBy;
+	}
+
+
+
+
+	public void setCreatedBy(String createdBy) {
+		this.createdBy = createdBy;
+	}
 
 
     public Long getId() {

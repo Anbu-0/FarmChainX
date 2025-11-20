@@ -43,62 +43,54 @@ public class SecurityConfig {
             // Disable CSRF because we use JWT, not cookies
             .csrf(csrf -> csrf.disable())
             
-         // Return JSON 401/403 so frontend can read the exact reason
+         // Custom JSON error responses for better frontend handling
             .exceptionHandling(ex -> ex
-                    .authenticationEntryPoint((request, response, authException) -> {
-                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                        response.setContentType("application/json");
-                        response.getWriter().write("{\"error\":\"Unauthorized\"}");
+            		.authenticationEntryPoint((req, res, authEx) -> {
+                        res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        res.setContentType("application/json");
+                        res.getWriter().write("{\"error\": \"Unauthorized - Please log in\"}");
                     })
-                    .accessDeniedHandler((request, response, accessDeniedException) -> {
-                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                        response.setContentType("application/json");
-                        response.getWriter().write("{\"error\":\"Forbidden\"}");
+            		.accessDeniedHandler((req, res, accessEx) -> {
+                        res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        res.setContentType("application/json");
+                        res.getWriter().write("{\"error\": \"Forbidden - Insufficient permissions\"}");
                     })
                 )
-
-         // 🔒 Stateless session (JWT-based)
-            .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
          
             // Authorize requests by path and role
             .authorizeHttpRequests(auth -> auth
 
-            		// ✅ MUST BE FIRST to avoid 403 on register/login
-                    .requestMatchers("/api/auth/**").permitAll()
-
-                 // Allow Spring Boot default error page
-                    .requestMatchers("/error").permitAll()
+            		 // Public endpoints - NO AUTH REQUIRED
+                    .requestMatchers("/api/auth/**").permitAll()                              // login, register, refresh
+                    .requestMatchers("/error", "/actuator/**").permitAll()
+                    .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                     
-            		// ✅ feedback route MUST come before /api/products/**
-                    .requestMatchers("/api/products/*/feedback").permitAll()
+                 // Public static files
+                    .requestMatchers("/uploads/**").permitAll()
                     
-            		// 🌍 Public routes — open to everyone (no login required)
-                    .requestMatchers(
-                            "/uploads/**",                     // images, static files
-                            "/api/verify/**",                  // QR scan verification (public + token-supported)
-                            "/api/products/*/qrcode/download"  // QR image download
-                    ).permitAll()
+                 // QR CODE & PUBLIC VERIFICATION - ANYONE CAN SCAN
+                    .requestMatchers("/api/verify/**").permitAll()
+                    .requestMatchers("/api/products/*/qrcode/download").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/products/by-uuid/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/products/{id}/public").permitAll()
 
-                 // Public product viewing for GETs
-                    .requestMatchers(HttpMethod.GET, "/api/products", "/api/products/*").permitAll()
+                    // Public product listing (for marketplace or search if any)
+                    .requestMatchers(HttpMethod.GET, "/api/products", "/api/products/**").permitAll()
 
-                 // ✅ Product modification for roles
-                    .requestMatchers("/api/products/**")
+                    // Role-based access
+                    .requestMatchers("/api/products/upload", "/api/products/**")
                         .hasAnyRole("FARMER", "DISTRIBUTOR", "RETAILER", "ADMIN")
 
                     // 🚚 Tracking endpoints — only DISTRIBUTER, RETAILER, ADMIN
                     .requestMatchers("/api/track/**")
-                        .hasAnyRole("DISTRIBUTOR", "RETAILER", "ADMIN")
-                        
-                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
-
+                        .hasAnyRole("DISTRIBUTOR", "RETAILER", "ADMIN","FARMER") // Farmers can also add notes if needed
 
                     // 🧑‍💼 Admin-only endpoints
                     .requestMatchers("/api/admin/**")
                         .hasRole("ADMIN")
 
-                    // 🔐 Everything else → must be authenticated
-                    .anyRequest().authenticated()
+                     // Everything else requires authentication
+                        .anyRequest().authenticated()
             )
 
             

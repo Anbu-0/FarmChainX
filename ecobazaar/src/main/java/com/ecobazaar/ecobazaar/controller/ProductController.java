@@ -1,6 +1,5 @@
 package com.ecobazaar.ecobazaar.controller;
 
-import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
@@ -19,21 +18,25 @@ import com.ecobazaar.ecobazaar.model.Product;
 import com.ecobazaar.ecobazaar.model.User;
 import com.ecobazaar.ecobazaar.repository.UserRepository;
 import com.ecobazaar.ecobazaar.service.ProductService;
+import com.ecobazaar.ecobazaar.model.SupplyChainLog;
+import com.ecobazaar.ecobazaar.repository.ProductRepository;
 
 
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping("/api")
 public class ProductController {
 
     private final ProductService productService;
     private final UserRepository userRepository;
+    private final ProductRepository productRepository;
 
-    public ProductController(ProductService productService, UserRepository userRepository) {
+    public ProductController(ProductService productService, UserRepository userRepository, ProductRepository productRepository) {
         this.productService = productService;
         this.userRepository = userRepository;
+        this.productRepository = productRepository;
     }
 
-    @PostMapping("/upload")
+    @PostMapping("/products/upload")
     @PreAuthorize("hasRole('FARMER')")
     public ResponseEntity<?> uploadProduct(
             @RequestParam String cropName,
@@ -46,26 +49,20 @@ public class ProductController {
     ) throws IOException {
 
         try {
-            if (principal == null) {
-                return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
-            }
-
-            if (imageFile == null || imageFile.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Image is required"));
-            }
+        	if (principal == null) return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
+            if (imageFile == null || imageFile.isEmpty()) return ResponseEntity.badRequest().body(Map.of("error", "Image is required"));
 
             String email = principal.getName();
-            User farmer = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Farmer not found"));
-
-            String uploadDir = System.getProperty("user.dir") + File.separator + "uploads";
-            File folder = new File(uploadDir);
+            
+            User farmer = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Farmer not found"));
+            String uploadDir = System.getProperty("user.dir") + java.io.File.separator + "uploads";
+            java.io.File folder = new java.io.File(uploadDir);
+            
             if (!folder.exists()) folder.mkdirs();
-
-            String imagePath = uploadDir + File.separator + System.currentTimeMillis() + "_" + imageFile.getOriginalFilename();
-            imageFile.transferTo(new File(imagePath));
-
-            LocalDate parsedDate = null;
+            String imagePath = uploadDir + java.io.File.separator + System.currentTimeMillis() + "_" + imageFile.getOriginalFilename();
+            imageFile.transferTo(new java.io.File(imagePath));
+            java.time.LocalDate parsedDate = null;
+            
             if (harvestDate != null && !harvestDate.isBlank()) {
                 try {
                     parsedDate = LocalDate.parse(harvestDate, DateTimeFormatter.ISO_DATE);
@@ -88,34 +85,27 @@ public class ProductController {
 
             Product saved = productService.saveProduct(product);
 
-            return ResponseEntity.ok(Map.of(
-                    "id", saved.getId(),
-                    "message", "Product uploaded"
-            ));
+            saved.ensurePublicUuid(); 
+            productRepository.save(saved);  
+            return ResponseEntity.ok(Map.of("id", saved.getId(), "message", "Product uploaded"));
 
         } catch (RuntimeException re) {
             return ResponseEntity.badRequest().body(Map.of("error", re.getMessage()));
         } catch (Exception ex) {
+        	ex.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", "Internal server error"));
         }
     }
 
     @PreAuthorize("hasRole('FARMER')")
-    @GetMapping("/my")
+    @GetMapping("/products/my")
     public ResponseEntity<?> getMyProducts(Principal principal) {
-        if (principal == null) {
-            return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
-        }
-
+    	if (principal == null) return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
         String principalName = principal.getName();
 
-        // Try email first
         Optional<User> maybeFarmer = userRepository.findByEmail(principalName);
 
-        // If not found by email, try name
-        if (maybeFarmer.isEmpty()) {
-            maybeFarmer = userRepository.findByName(principalName);
-        }
+        if (maybeFarmer.isEmpty()) maybeFarmer = userRepository.findByName(principalName);
 
         User farmer = maybeFarmer.orElseThrow(() -> new RuntimeException("Farmer not found: " + principalName));
 
@@ -126,38 +116,48 @@ public class ProductController {
 
 
     @PreAuthorize("hasAnyRole('FARMER','ADMIN')")
-    @PostMapping("/{id}/qrcode")
-    public String generateProductQrCode(@PathVariable Long id, Principal principal) {
+    @PostMapping("/products/{id}/qrcode")
+    public ResponseEntity<?> generateProductQrCode(@PathVariable Long id, Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
+        
         String email = principal.getName();
         User currentUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         Product product = productService.getProductById(id);
-        boolean isFarmer = currentUser.getRoles().stream().anyMatch(r -> r.getName().equalsIgnoreCase("ROLE_FARMER"));
-        boolean isAdmin = currentUser.getRoles().stream().anyMatch(r -> r.getName().equalsIgnoreCase("ROLE_ADMIN"));
+        
+        boolean isOwner = product.getFarmer().getId().equals(currentUser.getId());
+        boolean isAdmin = currentUser.getRoles().stream()
+                .anyMatch(r -> "ROLE_ADMIN".equalsIgnoreCase(r.getName()));
 
-        if (isFarmer && product.getFarmer().getId() != currentUser.getId()) {
-            throw new RuntimeException("Access Denied");
+        if (!isOwner && !isAdmin) {
+            return ResponseEntity.status(403).body(Map.of("error", "You can only generate QR for your own products"));
         }
 
-        if (isAdmin || isFarmer) {
-            return productService.generateProductQr(id);
-        }
+        String qrPath = productService.generateProductQr(id);
 
-        throw new RuntimeException("Access Denied");
+        return ResponseEntity.ok(Map.of(
+            "message", "QR Code generated successfully",
+            "qrPath", qrPath,
+            "verifyUrl", "https://yourdomain.com/verify/" + product.getPublicUuid() // optional for frontend
+        ));
     }
 
-    @GetMapping("/{id}/qrcode/download")
+    @GetMapping("/products/{id}/qrcode/download")
     public ResponseEntity<byte[]> downloadProductQR(@PathVariable Long id) {
-        byte[] imageBytes = productService.getProductQRImage(id);
-        return ResponseEntity.ok()
-                .header("Content-Type", "image/png")
-                .header("Content-Disposition", "attachment; filename=product_" + id + ".png")
-                .body(imageBytes);
+    	try {
+            byte[] imageBytes = productService.getProductQRImage(id);
+            return ResponseEntity.ok()
+                    .header("Content-Type", "image/png")
+                    .header("Content-Disposition", "attachment; filename=product_" + id + ".png")
+                    .body(imageBytes);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(404).body(null);
+        }
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','RETAILER','DISTRIBUTOR')")
-    @GetMapping("/filter")
+    @GetMapping("/products/filter")
     public List<Product> filterProducts(
             @RequestParam(required = false) String cropName,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate endDate
@@ -165,14 +165,70 @@ public class ProductController {
         return productService.filterProducts(cropName, endDate);
     }
 
-    @GetMapping("/{id}/public")
+    @GetMapping("/products/{id}/public")
     public Map<String, Object> getPublicView(@PathVariable Long id) {
         return productService.getPublicView(id);
     }
 
     @PreAuthorize("hasAnyRole('FARMER','ADMIN','DISTRIBUTOR','RETAILER')")
-    @GetMapping("/{id}/details")
+    @GetMapping("/products/{id}/details")
     public Map<String, Object> getAuthorizedView(@PathVariable Long id, Principal principal) {
         return productService.getAuthorizedView(id, principal != null ? principal.getName() : null);
+    }
+    @GetMapping("/products/by-uuid/{uuid}/public")
+    public ResponseEntity<?> getPublicByUuid(@PathVariable String uuid) {
+        return productRepository.findByPublicUuid(uuid)
+                .map(p -> ResponseEntity.ok(productService.getPublicView(p.getId())))
+                .orElseGet(() -> ResponseEntity.status(404).body(Map.of("error", "Product not found")));
+    }
+
+    @GetMapping("/verify/{uuid}")
+    public ResponseEntity<?> verifyByUuid(@PathVariable("uuid") String uuid, Principal principal) {
+        try {
+            Map<String, Object> data = productService.getPublicViewByUuid(uuid);
+            boolean canUpdate = false;
+
+            if (principal != null) {
+                User user = userRepository.findByEmail(principal.getName()).orElse(null);
+                if (user != null) {
+                    canUpdate = user.getRoles().stream().anyMatch(role ->
+                        "ROLE_DISTRIBUTOR".equals(role.getName()) ||
+                        "ROLE_RETAILER".equals(role.getName())
+                        // FARMER & ADMIN intentionally REMOVED → they see public view only
+                    );
+                }
+            }
+
+            data.put("canUpdate", canUpdate);
+            return ResponseEntity.ok(data);
+        } catch (Exception e) {
+            return ResponseEntity.status(404).body(Map.of("error", "Product not found"));
+        }
+    }
+
+    @PostMapping("/verify/{uuid}/track")
+    @PreAuthorize("hasAnyRole('RETAILER','DISTRIBUTOR')")  // ← ONLY these roles!
+    public ResponseEntity<?> addTrackingByUuid(@PathVariable("uuid") String uuid,
+                                               @RequestBody Map<String, String> body,
+                                               Principal principal) {
+        try {
+            String note = body.getOrDefault("note", "").trim();
+            String location = body.get("location");
+            if (note.isBlank()) return ResponseEntity.badRequest().body(Map.of("error", "note is required"));
+
+            String addedBy = principal != null ? principal.getName() : "unknown";
+            SupplyChainLog saved = productService.addTrackingByUuid(uuid, note, location, addedBy);
+
+            Map<String, Object> productPublic = productRepository.findByPublicUuid(uuid)
+                    .map(p -> Map.of("trackingHistory", productService.getPublicView(p.getId()).get("trackingHistory")))
+                    .orElse(Map.of("trackingHistory", List.of(saved)));
+
+            return ResponseEntity.ok(productPublic);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Internal server error"));
+        }
     }
 }
