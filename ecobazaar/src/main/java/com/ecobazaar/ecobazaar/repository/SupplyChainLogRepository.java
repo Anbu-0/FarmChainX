@@ -5,25 +5,25 @@ import com.ecobazaar.ecobazaar.model.SupplyChainLog;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface SupplyChainLogRepository extends JpaRepository<SupplyChainLog, Long> {
 
-	  
     List<SupplyChainLog> findByProductIdOrderByTimestampAsc(Long productId);
 
-
     Optional<SupplyChainLog> findTopByProductIdOrderByTimestampDesc(Long productId);
-    
-    @Query("""
-    	    SELECT log 
-    	    FROM SupplyChainLog log 
-    	    WHERE log.toUserId = :retailerId 
-    	      AND log.id = (
-    	            SELECT MAX(l2.id) 
-    	            FROM SupplyChainLog l2 
-    	            WHERE l2.productId = log.productId
-    	        )
-    	""")
-    	List<SupplyChainLog> findPendingForRetailer(Long retailerId);
 
+    @Query("""
+        SELECT log FROM SupplyChainLog log
+        WHERE log.toUserId = :retailerId
+          AND log.confirmed = false
+          AND log.rejected = false
+          AND log.id = (
+                SELECT MAX(l2.id)
+                FROM SupplyChainLog l2
+                WHERE l2.productId = log.productId
+          )
+        ORDER BY log.timestamp DESC
+        """)
+    List<SupplyChainLog> findPendingForRetailer(@Param("retailerId") Long retailerId);
 }

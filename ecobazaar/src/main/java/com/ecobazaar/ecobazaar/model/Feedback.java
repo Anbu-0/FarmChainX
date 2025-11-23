@@ -10,77 +10,81 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name="feedback")
+@Table(name = "feedback")
 public class Feedback {
-	
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
-	
-	private Long productId;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private Long productId;
     private Long consumerId;
 
     private int rating;
 
     @Column(length = 500)
     private String comment;
-    
+
     private LocalDateTime createdAt = LocalDateTime.now();
-    
-    public Feedback() {}
 
-	public Feedback(Long id, Long productId, Long consumerId, int rating, String comment) {
-		super();
-		this.id = id;
-		this.productId = productId;
-		this.consumerId = consumerId;
-		this.rating = rating;
-		this.comment = comment;
-	}
+    public Feedback() {
+    }
 
-	public Long getId() {
-		return id;
-	}
+    public Feedback(Long id, Long productId, Long consumerId, int rating, String comment) {
+        this.id = id;
+        this.productId = productId;
+        this.consumerId = consumerId;
+        this.rating = rating;
+        this.comment = comment;
+        this.createdAt = LocalDateTime.now();
+    }
 
-	public void setId(Long id) {
-		this.id = id;
-	}
 
-	public Long getProductId() {
-		return productId;
-	}
+    public Long getId() {
+        return id;
+    }
 
-	public void setProductId(Long productId) {
-		this.productId = productId;
-	}
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-	public Long getConsumerId() {
-		return consumerId;
-	}
+    public Long getProductId() {
+        return productId;
+    }
 
-	public void setConsumerId(Long consumerId) {
-		this.consumerId = consumerId;
-	}
+    public void setProductId(Long productId) {
+        this.productId = productId;
+    }
 
-	public int getRating() {
-		return rating;
-	}
+    public Long getConsumerId() {
+        return consumerId;
+    }
 
-	public void setRating(int rating) {
-		this.rating = rating;
-	}
+    public void setConsumerId(Long consumerId) {
+        this.consumerId = consumerId;
+    }
 
-	public String getComment() {
-		return comment;
-	}
+    public int getRating() {
+        return rating;
+    }
 
-	public void setComment(String comment) {
-		this.comment = comment;
-	}
-    
-    
+    public void setRating(int rating) {
+        this.rating = rating;
+    }
 
-	
-	
+    public String getComment() {
+        return comment;
+    }
 
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }
