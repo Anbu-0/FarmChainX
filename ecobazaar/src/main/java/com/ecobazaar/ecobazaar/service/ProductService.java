@@ -27,7 +27,7 @@ import com.ecobazaar.ecobazaar.repository.SupplyChainLogRepository;;
 @Service
 public class ProductService {
 
-    private final ProductRepository productRepository;
+	private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final AiService aiService;
     private final SupplyChainLogRepository supplyChainLogRepository;
@@ -46,15 +46,14 @@ public class ProductService {
     public Product saveProduct(Product product) {
         Product saved = productRepository.save(product);
         try {
-        	String path = saved.getImagePath();
+            String path = saved.getImagePath();
             if (path == null || path.isBlank()) {
                 throw new IllegalStateException("Image path missing for grading");
             }
-            java.io.File f = new java.io.File(path);
-            if (!f.exists() || !f.isFile()) {
-                throw new IOException("Image file not found at: " + path);
-            }
+
+            // ✅ Let AiService handle URL or local file. Do NOT pre-check with File.exists() here.
             Map<String, Object> aiResult = aiService.predictQuality(path);
+
             if (aiResult != null && aiResult.get("grade") != null && aiResult.get("confidence") != null) {
                 saved.setQualityGrade(String.valueOf(aiResult.get("grade")));
                 saved.setConfidenceScore(Double.parseDouble(aiResult.get("confidence").toString()));
@@ -63,10 +62,10 @@ public class ProductService {
                 throw new IllegalStateException("AI returned empty result");
             }
         } catch (Exception e) {
-        	System.err.println("[AI Grading Error] " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            // Non-fatal: keep the product, leave grading as pending
+            System.err.println("[AI Grading Error] " + e.getClass().getSimpleName() + ": " + e.getMessage());
             return saved;
         }
-        
     }
 
     public List<Product> getProductsByFarmerId(Long farmerId) {
@@ -85,40 +84,31 @@ public class ProductService {
     public String generateProductQr(Long productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
-
-        // Ensure public UUID exists
         product.ensurePublicUuid();
-        productRepository.save(product); // save if new UUID was generated
-
+        productRepository.save(product);
         String publicUuid = product.getPublicUuid();
 
-        // CHANGE THIS IN PRODUCTION!
         String frontendBase = System.getenv("FRONTEND_URL");
         if (frontendBase == null || frontendBase.isBlank()) {
-            frontendBase = "http://localhost:4200"; // dev fallback
+            frontendBase = "http://localhost:4200";
         }
 
         String qrText = frontendBase + "/verify/" + publicUuid;
-
         try {
             Path qrDir = Path.of("uploads", "qrcodes");
             Files.createDirectories(qrDir);
-
-            String fileName = "qr_" + publicUuid + ".png"; // Better: use UUID instead of ID
+            String fileName = "qr_" + publicUuid + ".png";
             Path qrFilePath = qrDir.resolve(fileName);
-
             QrCodeGenerator.generateQR(qrText, qrFilePath.toString());
-
             String webPath = "/uploads/qrcodes/" + fileName;
-
             product.setQrCodePath(webPath);
             productRepository.save(product);
-
             return webPath;
         } catch (Exception e) {
             throw new RuntimeException("Error generating QR code: " + e.getMessage(), e);
         }
     }
+
     public byte[] getProductQRImage(Long productId) {
         Product product = productRepository.findById(productId).orElseThrow(() -> new RuntimeException("Product not found"));
         String qrPath = product.getQrCodePath();
@@ -134,11 +124,9 @@ public class ProductService {
         }
     }
 
- // inside ProductService
     public Map<String, Object> getPublicView(Long productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
-
         Map<String, Object> data = new HashMap<>();
         data.put("cropName", product.getCropName());
         data.put("harvestDate", product.getHarvestDate());
@@ -151,9 +139,7 @@ public class ProductService {
         data.put("publicUuid", product.getPublicUuid());
         data.put("qrCodePath", product.getQrCodePath());
 
-        // Fetch logs in chronological order
         List<SupplyChainLog> logs = supplyChainLogRepository.findByProductIdOrderByTimestampAsc(productId);
-
         List<Map<String, Object>> trackingHistory = logs.stream().map(log -> {
             Map<String, Object> m = new HashMap<>();
             m.put("id", log.getId());
@@ -166,16 +152,14 @@ public class ProductService {
             m.put("createdBy", log.getCreatedBy() != null && !log.getCreatedBy().isBlank() ? log.getCreatedBy() : "Farmer");
             m.put("prevHash", log.getPrevHash());
             m.put("hash", log.getHash());
-            // NEW: explicit boolean flags so frontend logic can rely on them
             m.put("confirmed", log.isConfirmed());
-            m.put("confirmedAt", log.getConfirmedAt()); 
-            m.put("confirmedById", log.getConfirmedById()); 
+            m.put("confirmedAt", log.getConfirmedAt());
+            m.put("confirmedById", log.getConfirmedById());
             m.put("rejected", log.isRejected());
             m.put("rejectReason", log.getRejectReason());
             return m;
         }).collect(Collectors.toList());
 
-        // Keep the "initial harvest" entry consistent
         if (trackingHistory.isEmpty()) {
             Map<String, Object> initial = new HashMap<>();
             initial.put("id", null);
@@ -195,10 +179,10 @@ public class ProductService {
             initial.put("rejectReason", null);
             trackingHistory.add(initial);
         }
+
         data.put("trackingHistory", trackingHistory);
         return data;
     }
-
 
     public Map<String, Object> getPublicViewByUuid(String publicUuid) {
         Product product = productRepository.findByPublicUuid(publicUuid)
@@ -209,7 +193,6 @@ public class ProductService {
     public SupplyChainLog addTrackingByUuid(String publicUuid, String notes, String location, String addedByUsername) {
         Product product = productRepository.findByPublicUuid(publicUuid)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
-
         SupplyChainLog log = new SupplyChainLog();
         log.setProductId(product.getId());
         log.setNotes(notes);
@@ -218,7 +201,6 @@ public class ProductService {
         log.setFromUserId(null);
         log.setToUserId(null);
         log.setCreatedBy(addedByUsername != null ? addedByUsername : "Anonymous User");
-
         return supplyChainLogRepository.save(log);
     }
 
@@ -226,12 +208,10 @@ public class ProductService {
         Map<String, Object> data = new HashMap<>(getPublicView(productId));
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
-
         data.put("soilType", product.getSoilType());
         data.put("pesticides", product.getPesticides());
         data.put("canUpdateChain", false);
         data.put("requestedBy", "unknown");
-
         try {
             if (userPrincipal instanceof UserDetails ud) {
                 data.put("requestedBy", ud.getUsername());
@@ -239,10 +219,9 @@ public class ProductService {
                 data.put("requestedBy", s);
             }
         } catch (Exception ignored) {}
-
         return data;
     }
-    
+
     private String reverseToName(String gps) {
         try {
             if (gps == null || !gps.contains(",")) return gps;

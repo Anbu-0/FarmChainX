@@ -4,7 +4,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
 import com.ecobazaar.ecobazaar.model.SupplyChainLog;
 import com.ecobazaar.ecobazaar.repository.SupplyChainLogRepository;
 import com.ecobazaar.ecobazaar.util.HashUtil;
@@ -18,7 +22,6 @@ public class SupplyChainService {
         this.supplyChainLogRepository = supplyChainLogRepository;
     }
 
-    // Distributor or any authorized sender adds new tracking log
     public SupplyChainLog addLog(Long productId, Long fromUserId, Long toUserId,
                                  String location, String notes) {
         Optional<SupplyChainLog> lastLogOpt = supplyChainLogRepository.findTopByProductIdOrderByTimestampDesc(productId);
@@ -48,9 +51,8 @@ public class SupplyChainService {
 
         SupplyChainLog lastLog = lastLogOpt.get();
 
-        // ✅ Ensure this product was sent to this retailer
         if (!lastLog.getToUserId().equals(retailerId)) {
-            throw new RuntimeException("This product is not assigned to you. Only assigned retailer can confirm receipt.");
+            throw new RuntimeException("This product is not assigned to you. Only the assigned retailer can confirm receipt.");
         }
 
         String prevHash = lastLog.getHash();
@@ -82,9 +84,10 @@ public class SupplyChainService {
         }
         return true;
     }
-    
-    public List<SupplyChainLog> getPendingConfirmations(Long retailerId) {
-        return supplyChainLogRepository.findPendingForRetailer(retailerId);
-    }
 
+    // ✅ Paginated pending confirmations for retailer
+    public Page<SupplyChainLog> getPendingConfirmations(Long retailerId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return supplyChainLogRepository.findPendingForRetailer(retailerId, pageable);
+    }
 }

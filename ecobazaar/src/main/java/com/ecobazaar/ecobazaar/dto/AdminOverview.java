@@ -4,15 +4,15 @@ public class AdminOverview {
 	
 	private long totalUsers;
     private long totalProducts;
-    private long totalTransactions;
+    private long totalLogs;
     private long totalFeedbacks;
     
     public AdminOverview() {}
 
-    public AdminOverview(long totalUsers, long totalProducts, long totalTransactions, long totalFeedbacks) {
+    public AdminOverview(long totalUsers, long totalProducts, long totalLogs, long totalFeedbacks) {
         this.totalUsers = totalUsers;
         this.totalProducts = totalProducts;
-        this.totalTransactions = totalTransactions;
+        this.totalLogs = totalLogs;
         this.totalFeedbacks = totalFeedbacks;
     }
 
@@ -32,12 +32,12 @@ public class AdminOverview {
 		this.totalProducts = totalProducts;
 	}
 
-	public long getTotalTransactions() {
-		return totalTransactions;
+	public long getTotalLogs() { 
+		return totalLogs;
 	}
 
-	public void setTotalTransactions(long totalTransactions) {
-		this.totalTransactions = totalTransactions;
+	public void setTotalLogs(long totalLogs) { 
+		this.totalLogs = totalLogs;
 	}
 
 	public long getTotalFeedbacks() {
@@ -47,5 +47,7 @@ public class AdminOverview {
 	public void setTotalFeedbacks(long totalFeedbacks) {
 		this.totalFeedbacks = totalFeedbacks;
 	}
+
+ 
 
 }

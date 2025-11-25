@@ -10,6 +10,9 @@ import java.time.format.DateTimeParseException;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -67,12 +70,14 @@ public class ProductController {
             User farmer = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Farmer not found"));
 
-            String uploadDir = System.getProperty("user.dir") + java.io.File.separator + "uploads";
-            java.io.File folder = new java.io.File(uploadDir);
-            if (!folder.exists()) folder.mkdirs();
-
-            String imagePath = uploadDir + java.io.File.separator + System.currentTimeMillis() + "_" + imageFile.getOriginalFilename();
-            imageFile.transferTo(new java.io.File(imagePath));
+            com.cloudinary.Cloudinary cloudinary = new com.cloudinary.Cloudinary(
+                    "cloudinary://893825318738397:CKsCDkC9Pse0fXBsOuwrIoWYxSc@dkuiluszr"
+                );
+                java.util.Map uploadResult = cloudinary.uploader().upload(
+                    imageFile.getBytes(),
+                    com.cloudinary.utils.ObjectUtils.asMap("folder", "farmchainx/products")
+                );
+                String imagePath = uploadResult.get("secure_url").toString();
 
             LocalDate parsedDate = null;
             if (harvestDate != null && !harvestDate.isBlank()) {
@@ -113,15 +118,31 @@ public class ProductController {
 
     @PreAuthorize("hasRole('FARMER')")
     @GetMapping("/products/my")
-    public ResponseEntity<?> getMyProducts(Principal principal) {
+    public ResponseEntity<?> getMyProducts(
+            Principal principal,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "9") int size,
+            @RequestParam(defaultValue = "id,desc") String sort) {
+    	
         if (principal == null) return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
 
         String email = principal.getName();
         User farmer = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Farmer not found"));
 
-        List<Product> products = productService.getProductsByFarmerId(farmer.getId());
-        return ResponseEntity.ok(products);
+        String[] parts = sort.split(",", 2);
+        String sortProp = parts[0];
+        boolean asc = parts.length > 1 && "asc".equalsIgnoreCase(parts[1]);
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                asc ? Sort.Direction.ASC : Sort.Direction.DESC,
+                sortProp
+        );
+
+        var pageRes = productRepository.findByFarmerId(farmer.getId(), pageable);
+        return ResponseEntity.ok(pageRes);
     }
 
     @PreAuthorize("hasAnyRole('FARMER','ADMIN')")

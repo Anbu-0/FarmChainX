@@ -107,12 +107,28 @@ public class SupplyChainController {
 
     @PreAuthorize("hasRole('RETAILER')")
     @GetMapping("/pending")
-    public ResponseEntity<?> getPendingForRetailer(Principal principal) {
+    public ResponseEntity<?> getPendingForRetailer(
+            Principal principal,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "timestamp,desc") String sort) {
+
         User user = userRepository.findByEmail(principal.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        List<SupplyChainLog> pending = supplyChainService.getPendingConfirmations(user.getId());
-        return ResponseEntity.ok(pending);
+
+        String[] parts = sort.split(",", 2);
+        String sortProp = parts[0];
+        boolean asc = parts.length > 1 && "asc".equalsIgnoreCase(parts[1]);
+        var pageable = org.springframework.data.domain.PageRequest.of(
+                page, size,
+                asc ? org.springframework.data.domain.Sort.Direction.ASC : org.springframework.data.domain.Sort.Direction.DESC,
+                sortProp
+        );
+
+        var pageRes = supplyChainLogRepository.findPendingForRetailer(user.getId(), pageable);
+        return ResponseEntity.ok(pageRes); // Page<SupplyChainLog>
     }
+
     
     @GetMapping("/users/retailers")
     @PreAuthorize("hasRole('DISTRIBUTOR')")

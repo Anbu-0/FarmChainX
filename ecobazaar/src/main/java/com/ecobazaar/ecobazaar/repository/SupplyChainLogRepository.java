@@ -1,5 +1,7 @@
 package com.ecobazaar.ecobazaar.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import com.ecobazaar.ecobazaar.model.SupplyChainLog;
 import java.util.List;
@@ -14,16 +16,15 @@ public interface SupplyChainLogRepository extends JpaRepository<SupplyChainLog, 
     Optional<SupplyChainLog> findTopByProductIdOrderByTimestampDesc(Long productId);
 
     @Query("""
-        SELECT log FROM SupplyChainLog log
-        WHERE log.toUserId = :retailerId
-          AND log.confirmed = false
-          AND log.rejected = false
-          AND log.id = (
-                SELECT MAX(l2.id)
-                FROM SupplyChainLog l2
-                WHERE l2.productId = log.productId
-          )
-        ORDER BY log.timestamp DESC
-        """)
-    List<SupplyChainLog> findPendingForRetailer(@Param("retailerId") Long retailerId);
+         SELECT log FROM SupplyChainLog log
+    	    WHERE log.toUserId = :retailerId
+    	      AND log.confirmed = false
+    	      AND log.rejected = false
+    	      AND log.id = (
+    	            SELECT MAX(l2.id)
+    	            FROM SupplyChainLog l2
+    	            WHERE l2.productId = log.productId
+    	      )
+    	    """)
+    	Page<SupplyChainLog> findPendingForRetailer(@Param("retailerId") Long retailerId, Pageable pageable);
 }

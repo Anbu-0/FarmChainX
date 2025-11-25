@@ -7,12 +7,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.time.LocalDate;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
     List<Product> findByFarmerId(Long farmerId);
 
     Optional<Product> findByPublicUuid(String uuid);
+    
+    Page<Product> findByFarmerId(Long farmerId, Pageable pageable);
 
     @Query("SELECT p FROM Product p " +
            "WHERE (:cropName IS NULL OR p.cropName = :cropName) " +
