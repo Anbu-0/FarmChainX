@@ -1,5 +1,8 @@
 package com.ecobazaar.ecobazaar.controller;
 
+
+import org.springframework.http.HttpStatus;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -8,10 +11,12 @@ import com.ecobazaar.ecobazaar.model.User;
 import com.ecobazaar.ecobazaar.repository.UserRepository;
 import com.ecobazaar.ecobazaar.service.SupplyChainService;
 import com.ecobazaar.ecobazaar.repository.SupplyChainLogRepository;
+
+import java.io.Serializable;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
-import java.io.Serializable;
+
 
 @RestController
 @RequestMapping("/api/track")
@@ -30,72 +35,96 @@ public class SupplyChainController {
         this.supplyChainLogRepository = supplyChainLogRepository;
     }
 
-    @PreAuthorize("hasAnyRole('DISTRIBUTOR','RETAILER')")
     @PostMapping("/update-chain")
+    @PreAuthorize("hasAnyRole('DISTRIBUTOR','RETAILER')")
+    @Transactional
     public ResponseEntity<?> updateChain(@RequestBody Map<String, Object> payload, Principal principal) {
         try {
-            Long productId = Long.valueOf(payload.get("productId").toString());
-            String location = payload.get("location").toString();
-            String notes = payload.get("notes") != null ? payload.get("notes").toString() : "";
-            String email = principal.getName();
+        	Long productId = Long.valueOf(String.valueOf(payload.get("productId")));
+            String location = String.valueOf(payload.get("location")).trim();
+            String notes = payload.containsKey("notes") && payload.get("notes") != null
+                    ? String.valueOf(payload.get("notes")).trim() : "";
+            Long toUserId = payload.containsKey("toUserId") && payload.get("toUserId") != null
+                    ? Long.valueOf(String.valueOf(payload.get("toUserId"))) : null;
 
-            User currentUser = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("User not found: " + email));
+            if (location.isBlank()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Location is required"));
+            }
+
+            User currentUser = userRepository.findByEmail(principal.getName())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            String createdBy = (currentUser.getName() != null && !currentUser.getName().isBlank())
+                    ? currentUser.getName()
+                    : currentUser.getEmail();
 
             SupplyChainLog lastLog = supplyChainLogRepository
                     .findTopByProductIdOrderByTimestampDesc(productId)
                     .orElse(null);
 
-            SupplyChainLog newLog;
 
             if (currentUser.hasRole("ROLE_DISTRIBUTOR")) {
 
-                if (lastLog == null || (lastLog.getToUserId() == null && lastLog.getFromUserId() == null)) {
-                    newLog = supplyChainService.addLog(
-                        productId, null, currentUser.getId(), location,
-                        notes.isBlank() ? "Distributor received from farmer" : notes
+            	if (lastLog == null || (lastLog.getFromUserId() == null && lastLog.getToUserId() == null)) {
+                    supplyChainService.addLog(
+                            productId, null, currentUser.getId(), location,
+                            notes.isBlank() ? "Distributor received from farmer" : notes,
+                            createdBy
                     );
-                    return ResponseEntity.ok(Map.of(
-                        "message", "You have successfully taken the product from the farmer",
-                        "log", newLog
-                    ));
+                    return ResponseEntity.ok(Map.of("message", "You have taken possession from farmer"));
                 }
 
-                if (lastLog.getToUserId() != null && lastLog.getToUserId().equals(currentUser.getId())) {
-                    if (payload.get("toUserId") == null) {
-                        throw new RuntimeException("Please select a retailer to hand over the product");
+            	if (lastLog.isConfirmed() && lastLog.getToUserId() != null &&
+                        !lastLog.getToUserId().equals(currentUser.getId())) {
+                    return ResponseEntity.status(HttpStatus.CONFLICT)
+                            .body(Map.of("error", "Another distributor already has possession of this product"));
+                }
+
+            	if (lastLog.getToUserId() != null && !lastLog.getToUserId().equals(currentUser.getId())) {
+                    return ResponseEntity.status(HttpStatus.CONFLICT)
+                            .body(Map.of("error", "You no longer have possession of this product"));
+                }
+
+            	if (lastLog.getToUserId() == null || !lastLog.getToUserId().equals(currentUser.getId()) || !lastLog.isConfirmed()) {
+                    return ResponseEntity.status(HttpStatus.CONFLICT)
+                            .body(Map.of("error", "You do not have confirmed possession of this product"));
+                }
+
+            	if (toUserId != null) {
+                    if (toUserId.equals(currentUser.getId())) {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Cannot handover to yourself"));
                     }
-                    Long toRetailerId = Long.valueOf(payload.get("toUserId").toString());
-
-                    newLog = supplyChainService.addLog(
-                        productId, currentUser.getId(), toRetailerId, location,
-                        notes.isBlank() ? "Product handed over to retailer" : notes
+                    supplyChainService.addLog(
+                            productId, currentUser.getId(), toUserId, location,
+                            notes.isBlank() ? "Final handover to retailer" : notes,
+                            createdBy
                     );
-
-                    return ResponseEntity.ok(Map.of(
-                        "message", "Product handed over to retailer. Now visible in their Pending Receipts.",
-                        "log", newLog
-                    ));
+                    return ResponseEntity.ok(Map.of("message", "Product handed over to retailer"));
                 }
 
-                throw new RuntimeException("You cannot update this product at this stage");
-            }
+                supplyChainService.addLog(
+                        productId, currentUser.getId(), currentUser.getId(), location,
+                        notes.isBlank() ? "In-transit update" : notes,
+                        createdBy
+                );
+                return ResponseEntity.ok(Map.of("message", "Supply chain updated"));
 
-            else if (currentUser.hasRole("ROLE_RETAILER")) {
-                if (lastLog == null || !lastLog.getToUserId().equals(currentUser.getId()) || lastLog.getFromUserId() == null) {
-                    throw new RuntimeException("This product has not been handed over to you by the distributor yet");
+            } else if (currentUser.hasRole("ROLE_RETAILER")) {
+
+            	if (lastLog == null || !lastLog.getToUserId().equals(currentUser.getId())
+                        || lastLog.getFromUserId() == null || lastLog.isConfirmed()) {
+                    return ResponseEntity.status(HttpStatus.CONFLICT)
+                            .body(Map.of("error", "No pending handover for you to confirm"));
                 }
 
-                newLog = supplyChainService.confirmReceipt(productId, currentUser.getId(), location, notes);
-                return ResponseEntity.ok(Map.of(
-                    "message", "Receipt confirmed! Product is now fully received.",
-                    "log", newLog
-                ));
+            	supplyChainService.confirmReceipt(productId, currentUser.getId(), location, notes, createdBy);
+                return ResponseEntity.ok(Map.of("message", "Receipt confirmed successfully"));
             }
 
-            throw new RuntimeException("Unauthorized action");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Unauthorized"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        	return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", String.valueOf(e.getMessage())));
         }
     }
 
