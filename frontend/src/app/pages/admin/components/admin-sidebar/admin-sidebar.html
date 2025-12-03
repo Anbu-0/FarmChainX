@@ -1,0 +1,26 @@
+<aside class="w-80 backdrop-blur-2xl bg-white/5 border-r border-white/10 flex flex-col">
+  <div class="p-10 border-b border-white/10">
+    <h2 class="text-4xl font-black bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-emerald-400">
+      FarmChainX
+    </h2>
+    <p class="text-gray-400 text-sm mt-2">Admin Dashboard</p>
+  </div>
+
+  <nav class="flex-1 p-6 space-y-3">
+    <a routerLink="/admin/overview" routerLinkActive="bg-white/10 border-l-4 border-emerald-400"
+       class="flex items-center gap-4 px-6 py-5 rounded-2xl hover:bg-white/10 transition text-lg font-medium">
+      <span>Overview</span>
+    </a>
+
+    <a routerLink="/admin/users" routerLinkActive="bg-white/10 border-l-4 border-emerald-400"
+       class="flex items-center gap-4 px-6 py-5 rounded-2xl hover:bg-white/10 transition text-lg font-medium">
+      <span>All Users</span>
+    </a>
+
+    <a routerLink="/admin/promotion-requests" routerLinkActive="bg-white/10 border-l-4 border-emerald-400"
+       class="flex items-center justify-between px-6 py-5 rounded-2xl hover:bg-white/10 transition text-lg font-medium">
+      <span>Admin Requests</span>
+      <span class="bg-red-500/80 text-xs px-3 py-1 rounded-full animate-pulse">LIVE</span>
+    </a>
+  </nav>
+</aside>

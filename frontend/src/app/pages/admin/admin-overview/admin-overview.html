@@ -1,0 +1,37 @@
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 mt-8">
+  <div class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 to-purple-700 p-1 shadow-2xl transform hover:scale-105 transition-all duration-500">
+    <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition"></div>
+    <div class="relative bg-slate-900/90 backdrop-blur-xl rounded-3xl p-10">
+      <h3 class="text-indigo-300 text-xl font-semibold">Total Users</h3>
+      <p class="text-7xl font-black mt-6 text-white">{{ data?.totalUsers || 0 }}</p>
+      <p class="text-indigo-400 mt-3 text-lg">Active accounts</p>
+    </div>
+  </div>
+
+  <div class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 to-teal-700 p-1 shadow-2xl transform hover:scale-105 transition-all duration-500">
+    <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition"></div>
+    <div class="relative bg-slate-900/90 backdrop-blur-xl rounded-3xl p-10">
+      <h3 class="text-emerald-300 text-xl font-semibold">Total Products</h3>
+      <p class="text-7xl font-black mt-6 text-white">{{ data?.totalProducts || 0 }}</p>
+      <p class="text-emerald-400 mt-3 text-lg">In supply chain</p>
+    </div>
+  </div>
+
+  <div class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 to-cyan-700 p-1 shadow-2xl transform hover:scale-105 transition-all duration-500">
+    <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition"></div>
+    <div class="relative bg-slate-900/90 backdrop-blur-xl rounded-3xl p-10">
+      <h3 class="text-blue-300 text-xl font-semibold">Supply Logs</h3>
+      <p class="text-7xl font-black mt-6 text-white">{{ data?.totalLogs || 0 }}</p>
+      <p class="text-blue-400 mt-3 text-lg">Blockchain entries</p>
+    </div>
+  </div>
+
+  <div class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600 to-pink-700 p-1 shadow-2xl transform hover:scale-105 transition-all duration-500">
+    <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition"></div>
+    <div class="relative bg-slate-900/90 backdrop-blur-xl rounded-3xl p-10">
+      <h3 class="text-purple-300 text-xl font-semibold">Feedbacks</h3>
+      <p class="text-7xl font-black mt-6 text-white">{{ data?.totalFeedbacks || 0 }}</p>
+      <p class="text-purple-400 mt-3 text-lg">Consumer reviews</p>
+    </div>
+  </div>
+</div>

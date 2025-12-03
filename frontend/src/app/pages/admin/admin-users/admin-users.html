@@ -1,0 +1,38 @@
+<div class="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
+  <div class="px-10 py-8 bg-gradient-to-r from-indigo-600 to-purple-700">
+    <h2 class="text-4xl font-black text-white">All Users</h2>
+    <p class="text-indigo-200 mt-2 text-lg">Manage roles and permissions</p>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full">
+      <thead class="bg-white/5">
+        <tr>
+          <th class="px-10 py-6 text-left text-sm font-bold text-gray-300">Name</th>
+          <th class="px-10 py-6 text-left text-sm font-bold text-gray-300">Email</th>
+          <th class="px-10 py-6 text-left text-sm font-bold text-gray-300">Role</th>
+          <th class="px-10 py-6 text-left text-sm font-bold text-gray-300">Action</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-white/10">
+        <tr *ngFor="let user of users" class="hover:bg-white/5 transition">
+          <td class="px-10 py-6 font-medium text-white">{{ user.name }}</td>
+          <td class="px-10 py-6 text-indigo-400">{{ user.email }}</td>
+          <td class="px-10 py-6">
+            <span class="px-4 py-2 rounded-full text-xs font-bold"
+                  [ngClass]="roleClass(user.primaryRole)">
+              {{ user.primaryRole }}
+            </span>
+          </td>
+          <td class="px-10 py-6">
+            <button *ngIf="!user.isAdmin" (click)="promote(user.id)"
+                    class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transform hover:scale-110 transition">
+              Promote to Admin
+            </button>
+            <span *ngIf="user.isAdmin" class="text-emerald-400 font-bold text-lg">Admin</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

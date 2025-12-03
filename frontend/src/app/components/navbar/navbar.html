@@ -1,0 +1,76 @@
+<nav class="sticky top-0 z-50 backdrop-blur-2xl bg-white/10 border-b border-white/10 shadow-2xl">
+  <div class="max-w-7xl mx-auto px-6 lg:px-8">
+    <div class="flex justify-between items-center h-20">
+
+      <!-- LEFT: Logo -->
+      <div class="flex items-center">
+        <a routerLink="/" class="text-4xl font-black bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 via-lime-400 to-emerald-400 hover:from-emerald-300 hover:to-lime-300 transition">
+          FarmChainX
+        </a>
+      </div>
+
+      <!-- RIGHT: Navigation -->
+      <div class="flex items-center gap-8 text-lg font-medium">
+
+        <!-- NOT LOGGED IN -->
+        <ng-container *ngIf="!isLoggedIn">
+          <a routerLink="/login" class="text-gray-300 hover:text-white transition font-semibold">
+            Login
+          </a>
+          <a routerLink="/register"
+             class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 py-3.5 rounded-full font-bold shadow-xl transform hover:scale-105 transition">
+            Register Free
+          </a>
+        </ng-container>
+
+        <!-- LOGGED IN -->
+        <ng-container *ngIf="isLoggedIn">
+
+          <!-- QR Scanner Button -->
+          <a routerLink="/scanner"
+             routerLinkActive="ring-4 ring-emerald-500/50"
+             class="group flex items-center gap-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-7 py-4 rounded-full font-bold shadow-2xl transform hover:scale-110 transition">
+            <svg class="w-6 h-6 group-hover:animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                    d="M12 4v1m6 11h2m-6 5v1m-6-16H5a2 2 0 00-2 2v3m14-5h2a2 2 0 012 2v3m-9 9h.01" />
+            </svg>
+            Scan QR
+          </a>
+
+          <!-- Farmer Links -->
+          <ng-container *ngIf="isFarmer">
+            <a routerLink="/upload" routerLinkActive="text-emerald-400 font-bold"
+               class="text-gray-300 hover:text-white transition">Upload</a>
+            <a routerLink="/products/my" routerLinkActive="text-emerald-400 font-bold"
+               class="text-gray-300 hover:text-white transition">My Products</a>
+          </ng-container>
+
+          <!-- ADMIN PANEL — GOD MODE ACTIVATED -->
+          <a routerLink="/admin" *ngIf="isAdmin"
+             class="group relative overflow-hidden bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 hover:from-purple-700 hover:via-pink-700 hover:to-indigo-700 text-white px-8 py-4 rounded-full font-black text-xl shadow-2xl transform hover:scale-115 transition duration-300">
+            <span class="relative z-10 flex items-center gap-3">
+              <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
+              </svg>
+              Admin Panel
+            </span>
+            <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
+          </a>
+
+          <!-- User Info + Logout -->
+          <div class="flex items-center gap-6 border-l border-white/20 pl-8">
+            <div class="text-right">
+              <p class="text-sm text-gray-400">Welcome back</p>
+              <p class="font-bold text-xl text-emerald-400">{{ userName }}</p>
+            </div>
+            <button (click)="logout()"
+                    class="bg-red-500/20 hover:bg-red-500/40 border border-red-500/50 text-red-400 hover:text-white px-6 py-3 rounded-full font-bold transition backdrop-blur-md">
+              Logout
+            </button>
+          </div>
+
+        </ng-container>
+      </div>
+    </div>
+  </div>
+</nav>

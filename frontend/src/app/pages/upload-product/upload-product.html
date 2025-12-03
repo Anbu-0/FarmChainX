@@ -1,0 +1,96 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-950 via-emerald-950 to-teal-950 flex items-center justify-center px-6 py-16">
+  <!-- Animated Background Blobs -->
+  <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+    <div class="absolute top-0 left-0 w-96 h-96 bg-emerald-600 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob"></div>
+    <div class="absolute bottom-0 right-0 w-80 h-80 bg-lime-600 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob animation-delay-2000"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 w-96 h-96 bg-teal-600 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+  </div>
+
+  <div class="w-full max-w-2xl">
+    <div class="backdrop-blur-2xl bg-white/10 border border-white/20 rounded-3xl shadow-2xl p-10 md:p-14">
+      <!-- Header -->
+      <div class="text-center mb-12">
+        <h1 class="text-6xl md:text-7xl font-black bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-lime-400">
+          Upload New Harvest
+        </h1>
+        <p class="text-2xl text-gray-300 mt-4">Add your crop to the blockchain — forever trusted</p>
+      </div>
+
+      <form (ngSubmit)="uploadProduct()" class="space-y-8">
+        <!-- Crop Name -->
+        <div>
+          <label class="block text-lg font-bold text-gray-300 mb-3">Crop Name</label>
+          <input [(ngModel)]="cropName" name="cropName" required
+                 class="w-full px-6 py-5 bg-white/10 border border-white/30 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/30 transition text-lg"
+                 placeholder="e.g. Basmati Rice, Red Onion, Organic Tomato">
+        </div>
+
+        <!-- Soil & Pesticides -->
+        <div class="grid md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-lg font-bold text-gray-300 mb-3">Soil Type</label>
+            <input [(ngModel)]="soilType" name="soilType"
+                   class="w-full px-6 py-5 bg-white/10 border border-white/30 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/30 transition"
+                   placeholder="e.g. Loamy, Red Soil">
+          </div>
+          <div>
+            <label class="block text-lg font-bold text-gray-300 mb-3">Pesticides Used</label>
+            <input [(ngModel)]="pesticides" name="pesticides"
+                   class="w-full px-6 py-5 bg-white/10 border border-white/30 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/30 transition"
+                   placeholder="e.g. None, Neem Oil, Organic">
+          </div>
+        </div>
+
+        <!-- Harvest Date -->
+        <div>
+          <label class="block text-lg font-bold text-gray-300 mb-3">Harvest Date</label>
+          <input type="date" [(ngModel)]="harvestDate" name="harvestDate" [max]="today" required
+                 class="w-full px-6 py-5 bg-white/10 border border-white/30 rounded-2xl text-white focus:outline-none focus:border-emeraldsj-400 focus:ring-4 focus:ring-emerald-500/30 transition">
+        </div>
+
+        <!-- GPS Location -->
+        <div>
+          <label class="block text-lg font-bold text-gray-300 mb-3">GPS Location</label>
+          <div class="flex gap-4">
+            <input [(ngModel)]="gpsLocation" name="gpsLocation" readonly
+                   class="flex-1 px-6 py-5 bg-white/10 border border-white/30 rounded-2xl text-white placeholder-gray-500"
+                   placeholder="Auto-detected location">
+            <button type="button" (click)="detectGPS()" [disabled]="loading"
+                    class="px-8 py-5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold rounded-2xl shadow-xl transition transform hover:scale-105 whitespace-nowrap">
+              Detect GPS
+            </button>
+          </div>
+        </div>
+
+        <!-- Image Upload -->
+        <div>
+          <label class="block text-lg font-bold text-gray-300 mb-3">Product Image</label>
+          <input type="file" (change)="onFileSelected($event)" accept="image/*" required
+                 class="block w-full text-lg file:mr-6 file:py-5 file:px-8 file:rounded-2xl file:border-0 file:bg-gradient-to-r file:from-emerald-500 file:to-lime-500 file:text-white file:font-bold file:shadow-xl hover:file:from-emerald-600 hover:file:to-lime-600 cursor-pointer">
+
+          <!-- Image Preview -->
+          <div *ngIf="previewUrl" class="mt-8 text-center">
+            <img [src]="previewUrl" class="mx-auto max-h-96 rounded-3xl shadow-2xl border-4 border-white/20">
+            <p class="mt-4 text-emerald-400 font-bold text-xl">Image ready — looks amazing!</p>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" [disabled]="loading || !imageFile"
+                class="w-full relative overflow-hidden bg-gradient-to-r from-emerald-500 via-lime-500 to-emerald-600 hover:from-emerald-600 hover:via-lime-600 hover:to-emerald-700 text-white text-2xl font-black py-7 rounded-3xl shadow-2xl transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+          <span class="relative z-10">
+            {{ loading ? 'Uploading to Blockchain...' : 'Upload & Generate QR Code' }}
+          </span>
+          <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
+        </button>
+      </form>
+
+      <!-- Footer -->
+      <div class="mt-12 text-center">
+        <p class="text-gray-400 text-sm">
+          Powered by <span class="font-bold text-emerald-400">FarmChainX</span> • Transparent • Trusted • Immutable
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,225 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-950 via-emerald-950 to-black text-white overflow-hidden">
+  <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+    <div class="absolute top-0 left-0 w-96 h-96 bg-emerald-700 rounded-full mix-blend-multiply blur-3xl opacity-50 animate-blob"></div>
+    <div class="absolute bottom-0 right-0 w-96 h-96 bg-lime-600 rounded-full mix-blend-multiply blur-3xl opacity-40 animate-blob animation-delay-2000"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 w-80 h-80 bg-teal-700 rounded-full mix-blend-multiply blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+  </div>
+
+  <div *ngIf="loading" class="fixed inset-0 bg-black/80 backdrop-blur-xl flex items-center justify-center z-50">
+    <div class="text-center">
+      <div class="animate-spin rounded-full h-28 w-28 border-t-8 border-b-8 border-emerald-500 mx-auto mb-8"></div>
+      <p class="text-4xl font-black text-emerald-400">Verifying on Blockchain...</p>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="flex items-center justify-center min-h-screen px-6">
+    <div class="text-center">
+      <div class="text-9xl mb-8 opacity-30">Warning</div>
+      <h1 class="text-7xl font-black text-red-500 mb-6">Invalid QR Code</h1>
+      <p class="text-2xl text-gray-400">{{ error }}</p>
+      <p class="text-xl text-gray-500 mt-6">This product is not registered on FarmChainX</p>
+    </div>
+  </div>
+
+  <div *ngIf="product" class="max-w-7xl mx-auto px-6 py-12">
+    <div class="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
+
+      <div class="relative h-96 md:h-screen md:max-h-[80vh]">
+        <img [src]="getImageUrl(product.imageUrl)" [alt]="product.cropName" class="w-full h-full object-cover brightness-75">
+        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div class="text-[200px] md:text-[340px] drop-shadow-2xl animate-pulse">{{ getCropEmoji() }}</div>
+          </div>
+        <div class="absolute bottom-12 left-8 md:left-16 right-8">
+          <h1 class="text-7xl md:text-9xl font-black leading-none drop-shadow-2xl">{{ product.cropName | titlecase }}</h1>
+          <p class="text-3xl md:text-5xl mt-4 opacity-90">Harvested {{ product.harvestDate | date:'fullDate' }}</p>
+        </div>
+      </div>
+
+      <div class="flex justify-center -mt-28 mb-16 relative z-10">
+        <div class="backdrop-blur-xl bg-gradient-to-br from-emerald-500/90 to-teal-600/90 px-16 py-12 rounded-3xl border-8 border-white/30 shadow-2xl">
+          <div class="text-9xl font-black">{{ product.qualityGrade || 'A+' }}</div>
+          <div class="text-2xl font-bold text-emerald-200">AI Certified • {{ product.confidence | number:'1.0-0' }}% Confidence</div>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-10 px-8 md:px-20 mb-20">
+        <div class="backdrop-blur-md bg-white/10 rounded-3xl p-10 text-center border border-white/20">
+          <p class="text-gray-400 uppercase tracking-widest mb-6">Farm Origin</p>
+          <p class="text-4xl font-black">{{ displayLocation || 'Protected Location' }}</p>
+        </div>
+        <div class="backdrop-blur-md bg-white/10 rounded-3xl p-10 text-center border border-white/20">
+          <p class="text-gray-400 uppercase tracking-widest mb-6">Blockchain ID</p>
+          <p class="text-5xl font-black">#{{ product.productId }}</p>
+          <p class="text-sm font-mono text-gray-400 break-all mt-4">{{ product.publicUuid }}</p>
+        </div>
+      </div>
+
+      <div class="py-20 text-center bg-gradient-to-r from-emerald-600/20 to-teal-600/20 border-y border-white/10">
+        <div class="text-9xl mb-6 animate-pulse">Lock</div>
+        <h2 class="text-7xl font-black mb-6">100% Blockchain Verified</h2>
+        <p class="text-3xl opacity-90">Tamper-Proof • Immutable • Transparent</p>
+      </div>
+
+      <div class="px-8 md:px-20 py-24">
+        <h2 class="text-6xl font-black text-center mb-20">Supply Chain Journey</h2>
+        <div class="space-y-20 max-w-5xl mx-auto">
+          <div *ngFor="let log of product.trackingHistory; let i = index" class="flex gap-10 items-start">
+            <div class="flex flex-col items-center">
+              <div class="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-3xl font-black shadow-2xl border-4 border-white/30">
+                {{ i + 1 }}
+              </div>
+              <div *ngIf="i < product.trackingHistory.length - 1" class="w-2 bg-gradient-to-b from-emerald-400 to-transparent h-32 mt-6 opacity-60"></div>
+            </div>
+            <div class="flex-1 backdrop-blur-md bg-white/10 rounded-3xl p-10 border border-white/20">
+              <h3 class="text-3xl font-bold mb-3">{{ log.location || 'Farm Origin' }}</h3>
+              <p class="text-lg opacity-80 mb-4">{{ log.timestamp | date:'medium' }}</p>
+              <p class="text-xl leading-relaxed">{{ log.notes || 'Product entered supply chain' }}</p>
+              <p class="text-emerald-400 mt-6 font-medium">By {{ actorFromLog(log) }}</p>
+              <p *ngIf="log.confirmed" class="text-green-400 text-sm font-bold mt-2">Confirmed Receipt</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-8 md:px-20 py-20">
+        <div class="max-w-4xl mx-auto backdrop-blur-2xl bg-white/10 rounded-3xl p-12 border border-white/20 shadow-2xl">
+          <h2 class="text-5xl font-black text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-lime-400">
+            Consumer Reviews
+          </h2>
+
+          <div *ngIf="feedbacks?.length === 0" class="text-center py-16">
+            <p class="text-3xl font-bold text-gray-300">No feedback yet</p>
+            <p class="text-xl text-gray-400 mt-4">Be the first to review this product!</p>
+          </div>
+
+          <div *ngFor="let fb of feedbacks" class="mb-10 p-8 bg-white/5 rounded-2xl border border-white/10">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <div class="text-4xl font-black text-emerald-400">Rating: {{ fb.rating }}/5</div>
+                <p class="text-gray-400 mt-2">{{ fb.createdAt | date:'medium' }}</p>
+              </div>
+              <div class="text-sm text-gray-500">User #{{ fb.consumerId }}</div>
+            </div>
+            <p class="text-xl leading-relaxed text-gray-200">{{ fb.comment }}</p>
+          </div>
+
+          <div *ngIf="userRole === 'Consumer' && !consumerCanGiveFeedback && currentUserId" class="text-center py-16">
+            <p class="text-2xl font-medium text-gray-300">You have already submitted feedback for this product.</p>
+          </div>
+
+          <div *ngIf="userRole === 'Consumer' && consumerCanGiveFeedback" class="mt-12 pt-12 border-t border-white/20">
+            <h3 class="text-4xl font-black text-center mb-10 text-emerald-400">Leave Your Review</h3>
+            <div class="grid md:grid-cols-2 gap-8 mb-10">
+              <div class="text-center">
+                <label class="block text-xl font-bold text-gray-300 mb-4">Your Rating</label>
+                <input type="number" min="1" max="5" [(ngModel)]="myRating" class="w-32 px-6 py-6 bg-white/10 border-2 border-white/30 rounded-2xl text-4xl text-center font-bold focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/30 transition">
+              </div>
+              <div>
+                <label class="block text-xl font-bold text-gray-300 mb-4">Your Comment</label>
+                <textarea [(ngModel)]="myComment" rows="5" placeholder="Share your experience..." class="w-full px-8 py-6 bg-white/10 border-2 border-white/30 rounded-2xl text-xl resize-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/30 transition"></textarea>
+              </div>
+            </div>
+            <div class="text-center">
+              <button (click)="submitFeedback()" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black text-3xl py-8 px-24 rounded-3xl shadow-2xl transform hover:scale-105 transition">
+                Submit Feedback
+              </button>
+            </div>
+          </div>
+
+          <div *ngIf="currentUserId && userRole !== 'Consumer'" class="text-center text-gray-400 mt-6">
+            Only consumers can submit feedback.
+          </div>
+
+          <div *ngIf="!currentUserId" class="text-center text-gray-400 mt-6">
+            Sign in as a Consumer to submit feedback. You can still read reviews above.
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="showUpdatePossible()" class="px-8 md:px-20 py-32">
+        <div class="max-w-5xl mx-auto text-center space-y-12">
+          <div *ngIf="userRole === 'Distributor' && !hasDistributorTakenPossession()">
+            <h2 class="text-5xl font-black text-orange-400 mb-8">First Time Scanning</h2>
+            <p class="text-2xl text-gray-300 mb-12 max-w-2xl mx-auto">
+              By clicking below, you confirm that you have physically received this product from the farmer.
+            </p>
+            <button (click)="openForm('update')"
+              class="px-16 py-10 rounded-3xl text-5xl font-black bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 border-8 border-white/40 shadow-3xl transform hover:scale-105 transition">
+              I Have Taken From Farmer
+            </button>
+          </div>
+
+          <div *ngIf="userRole === 'Distributor' && hasDistributorTakenPossession()" class="space-y-10">
+            <div class="inline-flex flex-wrap justify-center gap-8">
+              <button (click)="openForm('update')"
+                class="px-10 py-6 rounded-3xl text-3xl font-black bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 border-4 border-white/30 shadow-2xl transform hover:scale-105 transition">
+                + Add Tracking Update
+              </button>
+
+              <button (click)="openForm('handover')"
+                class="px-10 py-6 rounded-3xl text-3xl font-black bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 hover:from-pink-700 hover:via-purple-700 hover:to-indigo-700 border-4 border-white/30 shadow-2xl transform hover:scale-105 transition">
+                FINAL HANDOVER TO RETAILER
+              </button>
+            </div>
+            <p class="text-2xl text-gray-300">You have confirmed possession • You can now update or handover</p>
+          </div>
+
+          <div *ngIf="userRole === 'Retailer'">
+            <h2 class="text-5xl font-black text-cyan-400 mb-8">Pending Receipt</h2>
+            <p class="text-2xl text-gray-300 mb-12">Distributor has handed over this product to you</p>
+            <button (click)="openForm('update')"
+              class="px-16 py-10 rounded-3xl text-5xl font-black bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-700 hover:to-blue-800 border-8 border-white/40 shadow-3xl transform hover:scale-105 transition">
+              Confirm Receipt
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="showAddForm" class="mt-16 backdrop-blur-2xl bg-white/10 rounded-3xl p-16 border-4 border-white/20 shadow-3xl">
+          <div *ngIf="mode === 'handover'" class="mb-12">
+            <label class="block text-4xl font-black text-center mb-8 text-pink-400">Select Retailer</label>
+            <select [(ngModel)]="selectedRetailerId" required class="w-full px-12 py-10 text-3xl bg-white/10 border-4 border-pink-500/50 rounded-3xl text-center font-bold focus:border-pink-400 focus:ring-8 focus:ring-pink-500/30 transition">
+              <option [ngValue]="null" disabled>Select retailer...</option>
+              <option *ngFor="let r of retailers" [ngValue]="r.id">{{ r.name }} ({{ r.email }})</option>
+            </select>
+          </div>
+
+          <div class="space-y-12">
+            <input [(ngModel)]="newLocation" placeholder="Current Location / Action Taken" required
+              class="w-full px-12 py-10 text-4xl bg-white/10 border-4 border-white/30 rounded-3xl placeholder-gray-500 text-center font-bold focus:border-emerald-400 focus:ring-8 focus:ring-emerald-500/30 transition">
+
+            <textarea [(ngModel)]="newNote" rows="4" placeholder="Additional notes (optional)"
+              class="w-full px-12 py-10 text-2xl bg-white/10 border-4 border-white/30 rounded-3xl placeholder-gray-500 resize-none focus:border-emerald-400 focus:ring-8 focus:ring-emerald-500/30 transition"></textarea>
+          </div>
+
+          <div class="mt-16 text-center">
+            <div class="inline-flex gap-8">
+              <button (click)="submitChainUpdate()"
+                [disabled]="mode === 'handover' && !selectedRetailerId"
+                class="px-16 py-10 rounded-3xl text-4xl font-black border-8 border-white/40 shadow-3xl transform hover:scale-105 transition"
+                [ngClass]="{
+                  'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700': !hasDistributorTakenPossession() && userRole === 'Distributor',
+                  'bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 hover:from-pink-700 hover:via-purple-700 hover:to-indigo-700': mode === 'handover',
+                  'bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-700 hover:to-blue-800': userRole === 'Retailer',
+                  'bg-gradient-to-r from-emerald-600 to-lime-600 hover:from-emerald-700 hover:to-lime-700': mode === 'update' && hasDistributorTakenPossession()
+                }">
+                {{ !hasDistributorTakenPossession() && userRole === 'Distributor' ? 'CONFIRM TAKEN FROM FARMER' :
+                   mode === 'handover' ? 'HANDOVER TO RETAILER' :
+                   userRole === 'Retailer' ? 'CONFIRM RECEIPT' : 'UPDATE BLOCKCHAIN' }}
+              </button>
+              <button (click)="cancelForm()" class="px-16 py-10 rounded-3xl text-4xl font-black bg-white/10 hover:bg-white/20 border-8 border-white/30">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="!showUpdatePossible() && (userRole === 'Distributor' || userRole === 'Retailer')" class="px-8 md:px-20 py-32 text-center">
+        <p class="text-5xl font-black text-gray-500">
+          {{ userRole === 'Distributor' ? 'You have already handed over this product to a retailer' : 'You have already confirmed receipt of this product' }}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,81 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-slate-900 flex items-center justify-center px-6">
+  <div class="absolute inset-0 -z-10 overflow-hidden">
+    <div class="absolute top-10 left-10 w-96 h-96 bg-emerald-600 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob"></div>
+    <div class="absolute bottom-10 right-10 w-80 h-80 bg-lime-500 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob animation-delay-2000"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 w-96 h-96 bg-amber-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+  </div>
+
+  <div class="w-full max-w-md">
+    <div class="backdrop-blur-2xl bg-white/10 border border-white/20 rounded-3xl shadow-2xl p-10">
+      <div class="text-center mb-10">
+        <h1 class="text-5xl font-black bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-lime-400">
+          FarmChainX
+        </h1>
+        <p class="text-2xl text-gray-300 mt-3">Create Your Account</p>
+      </div>
+
+      <form (ngSubmit)="submit()" #f="ngForm" autocomplete="off" class="space-y-6">
+        <input
+          class="w-full px-6 py-4 bg-white/10 border border-white/30 rounded-2xl placeholder-gray-400 text-white focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/20 transition"
+          name="name" placeholder="Full name" [(ngModel)]="name" required
+        />
+
+        <input
+          class="w-full px-6 py-4 bg-white/10 border border-white/30 rounded-2xl placeholder-gray-400 text-white focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/20 transition"
+          name="email" type="email" placeholder="Email address" [(ngModel)]="email" required
+        />
+
+        <input
+          class="w-full px-6 py-4 bg-white/10 border border-white/30 rounded-2xl placeholder-gray-400 text-white focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/20 transition"
+          name="password" type="password" placeholder="Password (min 4 characters)" [(ngModel)]="password" minlength="4" required
+        />
+
+        <div class="relative">
+  <select
+    name="role"
+    [(ngModel)]="role"
+    required
+    class="w-full px-6 py-4 bg-white/10 border border-white/30 rounded-2xl text-white focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/20 transition appearance-none cursor-pointer pr-12"
+    style="background-color: rgba(255,255,255,0.08); -webkit-appearance: none; -moz-appearance: none; appearance: none;"
+  >
+    <option value="" disabled selected class="bg-slate-900 text-gray-400">Select your role</option>
+    <option value="FARMER" class="bg-slate-800 text-white">Farmer</option>
+    <option value="CONSUMER" class="bg-slate-800 text-white">Consumer</option>
+    <option value="DISTRIBUTOR" class="bg-slate-800 text-white">Distributor</option>
+    <option value="RETAILER" class="bg-slate-800 text-white">Retailer</option>
+  </select>
+
+  <div class="absolute inset-y-0 right-0 flex items-center pr-6 pointer-events-none">
+    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+    </svg>
+  </div>
+</div>
+
+        <button
+          type="submit"
+          [disabled]="f.invalid"
+          class="w-full relative overflow-hidden bg-gradient-to-r from-emerald-500 to-lime-500 hover:from-emerald-600 hover:to-lime-600 text-white font-bold text-lg py-5 rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <span class="relative z-10">Create Account</span>
+          <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
+        </button>
+      </form>
+
+      <div class="mt-8 text-center">
+        <p class="text-gray-400">
+          Already have an account?
+          <a routerLink="/login" class="font-bold text-emerald-400 hover:text-emerald-300 transition">Login here</a>
+        </p>
+      </div>
+
+      <div class="mt-10 flex justify-center">
+        <div class="w-32 h-1 bg-gradient-to-r from-emerald-500 to-lime-500 rounded-full"></div>
+      </div>
+    </div>
+
+    <p class="text-center text-gray-500 text-sm mt-8">
+      Join the transparent food revolution • Powered by blockchain
+    </p>
+  </div>
+</div>

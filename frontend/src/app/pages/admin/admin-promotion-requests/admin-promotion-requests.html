@@ -1,0 +1,36 @@
+<div class="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
+  <div class="px-10 py-8 bg-gradient-to-r from-purple-600 to-pink-600">
+    <h2 class="text-4xl font-black text-white">Admin Access Requests</h2>
+    <p class="text-purple-200 mt-2 text-lg">Review and approve new admins</p>
+  </div>
+
+  <div *ngIf="requests.length === 0" class="p-24 text-center">
+    <p class="text-3xl text-gray-400">No pending requests</p>
+  </div>
+
+  <div *ngIf="requests.length > 0" class="divide-y divide-white/10">
+    <div *ngFor="let req of requests" class="px-10 py-8 hover:bg-white/5 transition flex items-center justify-between">
+      <div class="flex items-center gap-6">
+        <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg">
+          {{ req.user.name.charAt(0) }}
+        </div>
+        <div>
+          <p class="text-2xl font-bold text-white">{{ req.user.name }}</p>
+          <p class="text-gray-400">{{ req.user.email }}</p>
+          <p class="text-sm text-gray-500 mt-1">Requested {{ req.requestedAt | date:'medium' }}</p>
+        </div>
+      </div>
+
+      <div class="flex gap-4">
+        <button (click)="approve(req.id)" 
+                class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transform hover:scale-110 transition">
+          Approve
+        </button>
+        <button (click)="reject(req.id)" 
+                class="bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transform hover:scale-110 transition">
+          Reject
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
