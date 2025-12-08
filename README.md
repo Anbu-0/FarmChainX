@@ -1,6 +1,6 @@
 FarmChainX
 
-Status: Work in Progress (WIP)
+Status: Completed
 
 🚀 Overview
 
