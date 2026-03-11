@@ -11,7 +11,7 @@ import com.ecobazaar.ecobazaar.repository.UserRepository;
 import java.util.Set;
 
 
-//@Component
+@Component
 public class DataSeeder implements CommandLineRunner {
 
 	private final RoleRepository roleRepo;
