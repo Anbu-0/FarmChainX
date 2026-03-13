@@ -24,7 +24,7 @@ export class Register {
       return;
     }
 
-    this.http.post('/api/auth/register', {
+    this.http.post('${environment.apiUrl}/auth/register', {
       name: this.name,
       email: this.email,
       password: this.password,
