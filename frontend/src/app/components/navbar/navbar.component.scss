@@ -1,0 +1,112 @@
+// Navbar Component Styles
+.navbar-container {
+  @apply glass-morph sticky top-0 z-50 border-b border-white/20 backdrop-blur-xl shadow-2xl;
+}
+
+.logo-container {
+  .logo-icon {
+    @apply w-12 h-12 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    &:hover {
+      @apply shadow-glow-lg scale-110;
+      transform: scale(1.1) rotate(6deg);
+    }
+  }
+
+  .logo-text {
+    @apply text-4xl font-black font-display gradient-text-primary;
+    transition: all 0.3s ease-in-out;
+    
+    &:hover {
+      @apply gradient-text-accent;
+    }
+  }
+}
+
+.nav-links {
+  .nav-item {
+    @apply nav-link font-semibold transition-all duration-300;
+    
+    &.active {
+      @apply text-primary-400 font-bold;
+    }
+  }
+
+  .dropdown {
+    .dropdown-trigger {
+      @apply nav-link font-medium flex items-center space-x-1 transition-all duration-300;
+    }
+
+    .dropdown-content {
+      @apply glass-morph-dropdown rounded-xl border border-white/20 shadow-xl overflow-hidden;
+      animation: slideIn 0.2s ease-out;
+    }
+
+    .dropdown-item {
+      @apply block px-4 py-3 text-sm text-gray-200 transition-all duration-200;
+      
+      &:hover {
+        @apply bg-white/10 text-primary-400;
+      }
+    }
+  }
+}
+
+.user-section {
+  .user-info {
+    @apply flex items-center space-x-2 px-3 py-2 glass-morph-light rounded-lg;
+    
+    .user-avatar {
+      @apply w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center;
+    }
+
+    .user-name {
+      @apply text-sm font-medium text-gray-200;
+    }
+  }
+
+  .logout-btn {
+    @apply btn-ghost px-4 py-2 rounded-lg font-medium transition-all duration-300;
+    
+    &:hover {
+      @apply text-red-400 bg-red-500/10 border-red-500/30;
+    }
+  }
+}
+
+.mobile-menu {
+  @apply border-t border-white/20 mt-2 pt-4 pb-3 space-y-2;
+  animation: slideIn 0.2s ease-out;
+
+  .mobile-nav-item {
+    @apply block px-3 py-2 rounded-lg text-gray-200 transition-all duration-200;
+    
+    &:hover {
+      @apply bg-white/10 text-primary-400;
+    }
+  }
+}
+
+// Animations
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Mobile responsiveness
+@media (max-width: 768px) {
+  .logo-text {
+    @apply text-2xl;
+  }
+  
+  .nav-links {
+    @apply hidden;
+  }
+}

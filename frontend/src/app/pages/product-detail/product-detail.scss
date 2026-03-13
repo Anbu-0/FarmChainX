@@ -1,0 +1,36 @@
+/* Product Detail Page Specific Styles */
+.product-hero {
+  height: 60vh;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+}
+
+.detail-card {
+  backdrop-filter: blur(20px);
+  background: rgba(30, 41, 59, 0.9);
+  border: 2px solid rgba(16, 185, 129, 0.3);
+}
+
+.stat-card {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.back-button {
+  backdrop-filter: blur(10px);
+  background: rgba(71, 85, 105, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.back-button:hover {
+  background: rgba(100, 116, 139, 0.9);
+  border-color: rgba(148, 163, 184, 0.5);
+}
+
+.qr-container {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+.floating-emoji {
+  font-size: 8rem;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3));
+}

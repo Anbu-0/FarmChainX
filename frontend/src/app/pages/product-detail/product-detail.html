@@ -1,0 +1,202 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+  <!-- Fixed Back Button -->
+  <div class="fixed top-20 left-6 z-50">
+    <button (click)="goBack()" 
+            class="back-button flex items-center gap-3 px-6 py-3 rounded-xl font-bold text-white shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+      </svg>
+      <span>Back to Products</span>
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="fixed inset-0 bg-black/70 backdrop-blur-xl flex items-center justify-center z-50">
+    <div class="text-center">
+      <div class="animate-spin rounded-full h-24 w-24 border-t-8 border-b-8 border-emerald-500 mx-auto mb-8"></div>
+      <p class="text-3xl font-bold text-emerald-400">Loading product details...</p>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="flex items-center justify-center min-h-screen">
+    <div class="detail-card rounded-3xl p-16 max-w-2xl mx-auto text-center">
+      <div class="text-8xl mb-8">❌</div>
+      <h2 class="text-4xl font-black text-red-400 mb-6">{{ error }}</h2>
+      <button (click)="goBack()" 
+              class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black text-xl py-4 px-8 rounded-xl shadow-xl transform hover:scale-105 transition">
+        Go Back to Products
+      </button>
+    </div>
+  </div>
+
+  <!-- Product Details -->
+  <div *ngIf="product && !loading" class="relative">
+    <!-- Hero Section with Product Image -->
+    <div class="product-hero relative overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-br from-emerald-900/20 via-teal-900/20 to-slate-900/40"></div>
+      
+      <!-- Background Image -->
+      <div class="absolute inset-0">
+        <img [src]="getImageUrl(product.imagePath)" [alt]="product.cropName"
+             class="w-full h-full object-cover opacity-30"
+             (error)="$event.target.style.display='none'">
+      </div>
+
+      <!-- Floating Emoji -->
+      <div class="absolute inset-0 flex items-center justify-center">
+        <div class="floating-emoji animate-pulse-slow">
+          {{ getCropEmoji(product.cropName) }}
+        </div>
+      </div>
+
+      <!-- Product Title Overlay -->
+      <div class="relative z-10 h-full flex items-end">
+        <div class="w-full bg-gradient-to-t from-slate-950 via-slate-900/80 to-transparent p-12">
+          <div class="max-w-7xl mx-auto">
+            <h1 class="text-6xl md:text-8xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 via-lime-400 to-emerald-400">
+              {{ product.cropName | titlecase }}
+            </h1>
+            <p class="text-2xl mt-4 text-gray-300 font-medium">
+              Harvested {{ formatDate(product.harvestDate) }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="relative z-10 -mt-20 max-w-7xl mx-auto px-6 pb-16">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Left Column: Product Info -->
+        <div class="lg:col-span-2 space-y-8">
+          
+          <!-- Main Info Card -->
+          <div class="detail-card rounded-3xl p-8 shadow-2xl">
+            <h2 class="text-3xl font-black text-emerald-400 mb-6 flex items-center gap-3">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              Product Information
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="stat-card rounded-2xl p-6">
+                <h3 class="text-emerald-300 font-bold text-lg mb-2">Crop Name</h3>
+                <p class="text-2xl font-black text-white">{{ product.cropName | titlecase }}</p>
+              </div>
+              
+              <div class="stat-card rounded-2xl p-6">
+                <h3 class="text-emerald-300 font-bold text-lg mb-2">Harvest Date</h3>
+                <p class="text-xl font-semibold text-white">{{ formatDate(product.harvestDate) }}</p>
+              </div>
+              
+              <div class="stat-card rounded-2xl p-6" *ngIf="product.soilType">
+                <h3 class="text-emerald-300 font-bold text-lg mb-2">Soil Type</h3>
+                <p class="text-xl font-semibold text-white">{{ product.soilType }}</p>
+              </div>
+              
+              <div class="stat-card rounded-2xl p-6" *ngIf="product.pesticides">
+                <h3 class="text-emerald-300 font-bold text-lg mb-2">Pesticides Used</h3>
+                <p class="text-xl font-semibold text-white">{{ product.pesticides || 'None' }}</p>
+              </div>
+              
+              <div class="stat-card rounded-2xl p-6" *ngIf="product.gpsLocation">
+                <h3 class="text-emerald-300 font-bold text-lg mb-2">GPS Location</h3>
+                <p class="text-lg font-mono text-white break-all">{{ product.gpsLocation }}</p>
+              </div>
+              
+              <div class="stat-card rounded-2xl p-6">
+                <h3 class="text-emerald-300 font-bold text-lg mb-2">Product ID</h3>
+                <p class="text-lg font-mono text-white">#{{ product.id }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Quality Assessment -->
+          <div class="detail-card rounded-3xl p-8 shadow-2xl">
+            <h2 class="text-3xl font-black text-emerald-400 mb-6 flex items-center gap-3">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              AI Quality Assessment
+            </h2>
+            
+            <div class="flex items-center justify-center mb-6">
+              <div class="bg-gradient-to-br from-emerald-500/95 to-teal-600/95 px-12 py-8 rounded-3xl border-2 border-emerald-400/50 shadow-2xl">
+                <div class="text-6xl font-black text-white text-center">{{ product.qualityGrade || 'A+' }}</div>
+                <div class="text-lg font-bold text-emerald-100 text-center mt-2">
+                  AI Certified • {{ product.confidenceScore || 95 | number:'1.0-0' }}% Confidence
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Farmer Information -->
+          <div class="detail-card rounded-3xl p-8 shadow-2xl">
+            <h2 class="text-3xl font-black text-emerald-400 mb-6 flex items-center gap-3">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+              </svg>
+              Registered By
+            </h2>
+            
+            <div class="stat-card rounded-2xl p-6">
+              <p class="text-2xl font-bold text-white mb-2">{{ product.farmer?.name || 'Farmer' }}</p>
+              <p class="text-emerald-300 font-semibold">
+                Public ID: {{ product.publicUuid?.substring(0, 8) }}...
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: QR Code & Actions -->
+        <div class="space-y-8">
+          
+          <!-- QR Code Section -->
+          <div class="detail-card rounded-3xl p-8 shadow-2xl">
+            <h2 class="text-2xl font-black text-emerald-400 mb-6 text-center">QR Code</h2>
+            
+            <div *ngIf="product.qrCodePath" class="text-center">
+              <div class="qr-container p-6 rounded-2xl mb-6">
+                <img [src]="getQrUrl(product.qrCodePath)" alt="QR Code" 
+                     class="w-full max-w-64 mx-auto rounded-xl shadow-2xl">
+              </div>
+              
+              <div class="space-y-4">
+                <button (click)="downloadQr()" 
+                        class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-black text-lg py-4 rounded-xl shadow-xl transform hover:scale-105 transition">
+                  📥 Download QR Code
+                </button>
+                
+                <a [href]="getQrUrl(product.qrCodePath)" target="_blank"
+                   class="block w-full text-center bg-slate-600/80 hover:bg-slate-500/90 backdrop-blur-md border-2 border-slate-400/30 py-4 rounded-xl font-bold text-lg transition text-white hover:text-emerald-300">
+                  👁️ View Full Size
+                </a>
+              </div>
+            </div>
+            
+            <div *ngIf="!product.qrCodePath" class="text-center">
+              <div class="text-6xl mb-4">⚠️</div>
+              <p class="text-xl text-orange-300 mb-6">QR Code not generated yet</p>
+              <button (click)="generateQr()" 
+                      class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black text-lg py-4 rounded-xl shadow-xl transform hover:scale-105 transition">
+                🔄 Generate QR Code
+              </button>
+            </div>
+          </div>
+
+          <!-- Product Image -->
+          <div class="detail-card rounded-3xl p-8 shadow-2xl" *ngIf="product.imagePath">
+            <h2 class="text-2xl font-black text-emerald-400 mb-6 text-center">Product Image</h2>
+            <img [src]="getImageUrl(product.imagePath)" [alt]="product.cropName"
+                 class="w-full rounded-2xl shadow-2xl border-2 border-emerald-400/30"
+                 (error)="$event.target.style.display='none'">
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

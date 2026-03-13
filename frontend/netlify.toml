@@ -1,0 +1,70 @@
+# Netlify configuration for FarmChainX Angular Frontend
+# This file configures the build settings and deployment options for Netlify
+# Updated to fix Angular CLI missing issue
+
+[build]
+  # Build command that installs deps and builds with npx
+  command = "npm install && npm run build:prod"
+  
+  # Directory to publish (Angular dist folder)
+  publish = "dist/farmchainx-frontend"
+  
+  # Base directory for build (if different from root)
+  base = "frontend"
+
+[build.environment]
+  # Node.js version for build
+  NODE_VERSION = "20.19.0"
+  
+  # Angular CLI version
+  NG_CLI_VERSION = "17"
+  
+  # Production build flag
+  NODE_ENV = "production"
+
+# Redirect rules for Angular SPA
+[[redirects]]
+  # Handle Angular routing - redirect all requests to index.html
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Security headers for production
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Cache control for static assets
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Environment-specific settings
+[context.production]
+  command = "npm run build:prod"
+  
+  [context.production.environment]
+    NODE_ENV = "production"
+    ANGULAR_ENV = "production"
+
+[context.branch-deploy]
+  command = "npm run build"
+
+[context.deploy-preview]
+  command = "npm run build"
