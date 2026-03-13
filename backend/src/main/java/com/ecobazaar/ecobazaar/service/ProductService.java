@@ -12,6 +12,9 @@ import java.util.stream.Collectors;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional; // ✅ use Spring’s version
 import org.springframework.security.core.userdetails.UserDetails;
@@ -31,15 +34,18 @@ public class ProductService {
     private final UserRepository userRepository;
     private final AiService aiService;
     private final SupplyChainLogRepository supplyChainLogRepository;
+	private final Cloudinary cloudinary;
 
     public ProductService(ProductRepository productRepository,
                           UserRepository userRepository,
                           AiService aiService,
-                          SupplyChainLogRepository supplyChainLogRepository) {
+                          SupplyChainLogRepository supplyChainLogRepository,
+						  Cloudinary cloudinary) {
         this.productRepository = productRepository;
         this.userRepository = userRepository;
         this.aiService = aiService;
         this.supplyChainLogRepository = supplyChainLogRepository;
+		this.cloudinary = cloudinary;
     }
 
     @Transactional
@@ -95,15 +101,24 @@ public class ProductService {
 
         String qrText = frontendBase + "/verify/" + publicUuid;
         try {
-            Path qrDir = Path.of("uploads", "qrcodes");
-            Files.createDirectories(qrDir);
             String fileName = "qr_" + publicUuid + ".png";
-            Path qrFilePath = qrDir.resolve(fileName);
-            QrCodeGenerator.generateQR(qrText, qrFilePath.toString());
-            String webPath = "/uploads/qrcodes/" + fileName;
-            product.setQrCodePath(webPath);
-            productRepository.save(product);
-            return webPath;
+			// create temp file
+            Path tempFile = Files.createTempFile("qr_", ".png");
+			// generate QR into temp file
+			QrCodeGenerator.generateQR(qrText, tempFile.toString());
+			// upload to Cloudinary
+            Map uploadResult = cloudinary.uploader().upload(
+                 tempFile.toFile(),
+                 ObjectUtils.asMap("folder", "farmchainx/qrcodes")
+                            );
+			String qrUrl = uploadResult.get("secure_url").toString();
+			// save Cloudinary URL
+			product.setQrCodePath(qrUrl);
+			productRepository.save(product);
+			// delete temp file
+			Files.deleteIfExists(tempFile);
+			return qrUrl;
+			
         } catch (Exception e) {
             throw new RuntimeException("Error generating QR code: " + e.getMessage(), e);
         }
