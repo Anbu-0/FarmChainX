@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   standalone: true,
@@ -22,7 +23,7 @@ export class Login {
   ) {}
 
   login() {
-    this.http.post<any>('/api/auth/login', {
+    this.http.post<any>(`${environment.apiUrl}/auth/login`, {
       email: this.email,
       password: this.password
     }).subscribe({
