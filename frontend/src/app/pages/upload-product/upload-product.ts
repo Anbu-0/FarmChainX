@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-upload-product',
@@ -85,7 +86,7 @@ export class UploadProduct {
     formData.append('gpsLocation', this.gpsLocation.trim());
     formData.append('image', this.imageFile);
 
-    this.http.post<any>('/api/products/upload', formData)
+    this.http.post<any>(`${environment.apiUrl}/products/upload`, formData)
       .subscribe({
         next: (res) => {
           this.loading = false;

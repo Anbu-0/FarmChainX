@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { catchError, throwError } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 @Component({
   standalone: true,
@@ -35,7 +36,7 @@ export class ProductDetailComponent implements OnInit {
     this.loading = true;
     this.error = '';
 
-    this.http.get<any>(`/api/products/${id}`)
+    this.http.get<any>(`${environment.apiUrl}/products/${id}`)
       .pipe(
         catchError(err => {
           console.error('Failed to load product details:', err);
@@ -61,11 +62,11 @@ export class ProductDetailComponent implements OnInit {
   }
 
   getImageUrl(path: string): string {
-    return path?.startsWith('http') ? path : `http://localhost:8080${path}`;
+    return path?.startsWith('http') ? path : `${environment.apiUrl}${path}`;
   }
 
   getQrUrl(path: string): string {
-    return path?.startsWith('http') ? path : `http://localhost:8080${path}`;
+    return path?.startsWith('http') ? path : `${environment.apiUrl}${path}`;
   }
 
   formatDate(date: string | null): string {
@@ -114,11 +115,11 @@ export class ProductDetailComponent implements OnInit {
   generateQr() {
     if (!this.product?.id) return;
 
-    this.http.post<any>(`/api/products/${this.product.id}/qrcode`, {}).subscribe({
+    this.http.post<any>(`${environment.apiUrl}/products/${this.product.id}/qrcode`, {}).subscribe({
       next: (res) => {
         const url = res.qrPath.startsWith('http')
           ? res.qrPath
-          : `http://localhost:8080${res.qrPath}`;
+          : `${environment.apiUrl}${res.qrPath}`;
         const filename = this.generateFilename();
 
         const link = document.createElement('a');

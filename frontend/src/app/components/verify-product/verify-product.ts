@@ -3,6 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { environment } from '../../../environments/environment';
 
 type Mode = 'update' | 'handover' | null;
 
@@ -69,7 +70,7 @@ export class VerifyProduct implements OnInit {
 
   private loadProduct() {
     this.loading = true;
-    this.http.get(`/api/verify/${this.uuid}`).subscribe({
+    this.http.get(`${environment.apiUrl}/verify/${this.uuid}`).subscribe({
       next: (data: any) => {
         if (Array.isArray(data?.trackingHistory)) {
           data.trackingHistory = [...data.trackingHistory].sort(
@@ -90,7 +91,7 @@ export class VerifyProduct implements OnInit {
   }
 
   private loadRetailers() {
-    this.http.get<any[]>('/api/track/users/retailers').subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/track/users/retailers`).subscribe({
       next: (data) => {
         this.retailers = data;
       }
@@ -99,7 +100,7 @@ export class VerifyProduct implements OnInit {
 
   private loadFeedbacks() {
     if (!this.product?.productId) return;
-    this.http.get<any[]>(`/api/products/${this.product.productId}/feedbacks`).subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/products/${this.product.productId}/feedbacks`).subscribe({
       next: (list) => {
         this.feedbacks = list || [];
       }
@@ -207,7 +208,7 @@ export class VerifyProduct implements OnInit {
       payload.toUserId = this.selectedRetailerId;
     }
 
-    this.http.post('/api/track/update-chain', payload).subscribe({
+    this.http.post(`${environment.apiUrl}/track/update-chain`, payload).subscribe({
       next: (res: any) => {
         alert(res?.message || 'Success!');
         this.cancelForm();
@@ -227,7 +228,7 @@ export class VerifyProduct implements OnInit {
       location: this.newLocation.trim() || 'Distributor received from farmer',
       notes: this.newNote.trim() || 'Distributor received from farmer'
     };
-    this.http.post('/api/track/update-chain', payload).subscribe({
+    this.http.post(`${environment.apiUrl}/track/update-chain`, payload).subscribe({
       next: (res: any) => {
         alert(res?.message || 'You have taken possession from farmer');
         this.cancelForm();
@@ -246,7 +247,7 @@ export class VerifyProduct implements OnInit {
     const rating = Number(this.myRating || 0);
     if (!rating || rating < 1 || rating > 5) { alert('Rating must be 1–5'); return; }
     const payload = { rating, comment: (this.myComment || '').trim() };
-    this.http.post(`/api/products/${this.product.productId}/feedback`, payload).subscribe({
+    this.http.post(`${environment.apiUrl}/products/${this.product.productId}/feedback`, payload).subscribe({
       next: () => {
         alert('Thanks for your feedback!');
         this.consumerCanGiveFeedback = false;
@@ -273,7 +274,7 @@ export class VerifyProduct implements OnInit {
   }
 
   getImageUrl(path: string): string {
-    return path?.startsWith('http') ? path : `http://localhost:8080${path}`;
+    return path?.startsWith('http') ? path : `${environment.apiUrl}${path}`;
   }
 
   actorFromLog(log: any): string {

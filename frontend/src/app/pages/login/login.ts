@@ -23,7 +23,7 @@ export class Login {
   ) {}
 
   login() {
-    this.http.post<any>(`${environment.apiUrl}/api/auth/login`, {
+    this.http.post<any>(`${environment.apiUrl}/auth/login`, {
       email: this.email,
       password: this.password
     }).subscribe({

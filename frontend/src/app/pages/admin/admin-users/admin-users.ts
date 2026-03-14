@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
+import { environment } from '../../../../environments/environment';
+import { AdminService } from '../../../services/admin.service';
 
 type PrimaryRole = 'ADMIN' | 'FARMER' | 'DISTRIBUTOR' | 'RETAILER' | 'CONSUMER' | 'USER';
 
@@ -44,7 +46,7 @@ export class AdminUsers implements OnInit {
     }
 
   loadUsers(): void {
-    this.http.get<any[]>('/api/admin/users').subscribe(data => {
+    this.http.get<any[]>(`${environment.apiUrl}/admin/users`).subscribe(data => {
       this.users = data.map(u => {
         const roles = (u.roles ?? []).map((r: any) => this.normalizeRole(r));
         const isAdmin = roles.includes('ROLE_ADMIN');
@@ -73,7 +75,7 @@ export class AdminUsers implements OnInit {
 
   promote(userId: number): void {
     if (!confirm('Promote this user to Admin?')) return;
-    this.http.post(`/api/admin/promote/${userId}`, {}).subscribe({
+    this.http.post(`${environment.apiUrl}/admin/promote/${userId}`, {}).subscribe({
       next: () => {
         alert('User promoted to Admin successfully!');
         this.loadUsers();

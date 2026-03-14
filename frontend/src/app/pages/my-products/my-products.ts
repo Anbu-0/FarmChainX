@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { catchError, delay, retryWhen, scan, throwError } from 'rxjs';
-import { environment } from '../../../environments/environment'; // ← ADD THIS
+import { environment } from '../../../environments/environment';
 
 @Component({
   standalone: true,
