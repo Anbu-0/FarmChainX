@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { catchError, delay, retryWhen, scan, throwError } from 'rxjs';
+import { environment } from '../../../environments/environment'; // ← ADD THIS
 
 @Component({
   standalone: true,
@@ -26,7 +27,7 @@ export class MyProducts {
     this.retryMessage = '';
 
     this.http
-      .get<any>(`/api/products/my?page=${page}&size=${this.size}&sort=id,desc`)
+      .get<any>(`${environment.apiUrl}/products/my?page=${page}&size=${this.size}&sort=id,desc`) // ← FIXED
       .pipe(
         retryWhen(errors =>
           errors.pipe(
@@ -36,7 +37,7 @@ export class MyProducts {
               this.retryMessage = `🔁 Reconnecting... (Attempt ${retryCount} of 3)`;
               return retryCount;
             }, 0),
-            delay(1000) // exponential backoff could be delay(500 * Math.pow(2, retryCount))
+            delay(1000)
           )
         ),
         catchError(err => {
@@ -66,12 +67,12 @@ export class MyProducts {
   }
 
   generateQr(id: number) {
-    this.http.post<any>(`/api/products/${id}/qrcode`, {}).subscribe({
+    this.http.post<any>(`${environment.apiUrl}/products/${id}/qrcode`, {}).subscribe({ // ← FIXED
       next: (res) => {
         const product = this.products.find(p => p.id === id)!;
         const url = res.qrPath.startsWith('http')
           ? res.qrPath
-          : `http://localhost:8080${res.qrPath}`;
+          : `${environment.apiUrl}${res.qrPath}`; // ← FIXED (was localhost:8080)
         const filename = this.generateFilename(product);
 
         const link = document.createElement('a');
@@ -112,11 +113,11 @@ export class MyProducts {
   }
 
   getImageUrl(path: string): string {
-    return path?.startsWith('http') ? path : `http://localhost:8080${path}`;
+    return path?.startsWith('http') ? path : `${environment.apiUrl}${path}`; // ← FIXED
   }
 
   getQrUrl(path: string): string {
-    return path?.startsWith('http') ? path : `http://localhost:8080${path}`;
+    return path?.startsWith('http') ? path : `${environment.apiUrl}${path}`; // ← FIXED
   }
 
   formatDate(date: string | null): string {
