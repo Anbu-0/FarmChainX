@@ -16,10 +16,11 @@ import java.net.URLConnection;
 @Service
 public class AiService {
 
-	private static final String[] GRADES = {"A+", "A", "B+", "B", "C"};
+    private static final String[] GRADES = {"A+", "A", "B+", "B", "C"};
     private final Random random = new Random();
 
-    public Map<String, Object> predictQuality(String imagePath) throws IOException {
+    // ✅ New method: accepts cropName directly from product data
+    public Map<String, Object> predictQuality(String imagePath, String cropName) throws IOException {
         BufferedImage img;
 
         if (imagePath != null && (imagePath.startsWith("http://") || imagePath.startsWith("https://"))) {
@@ -40,22 +41,49 @@ public class AiService {
             img = resizeImage(img, 800);
         }
 
-        double redRatio       = calculateRedRatio(img);
-        double greenRatio     = calculateGreenRatio(img);
-        double yellowRatio    = calculateYellowRatio(img);
-        double orangeRatio    = calculateOrangeRatio(img);
-        double cropPixelRatio = calculateCropPixelRatio(img);
+        double redRatio        = calculateRedRatio(img);
+        double greenRatio      = calculateGreenRatio(img);
+        double yellowRatio     = calculateYellowRatio(img);
+        double orangeRatio     = calculateOrangeRatio(img);
+        double purpleRatio     = calculatePurpleRatio(img);
+        double cropPixelRatio  = calculateCropPixelRatio(img);
         double brownBlackRatio = calculateBrownBlackRatio(img, cropPixelRatio);
-        double uniformity     = calculateUniformity(brownBlackRatio);
+        double uniformity      = calculateUniformity(brownBlackRatio);
 
-        String cropHint = guessCropFromFilename(imagePath);
-        String grade = determineGrade(cropHint, redRatio, greenRatio, yellowRatio, orangeRatio, brownBlackRatio, uniformity);
+        // ✅ Use cropName passed directly — no filename guessing needed
+        String cropHint = normalizeCropName(cropName);
+        String grade = determineGrade(cropHint, redRatio, greenRatio, yellowRatio, orangeRatio, purpleRatio, brownBlackRatio, uniformity);
         double confidence = calculateConfidence(grade, brownBlackRatio, uniformity);
 
         Map<String, Object> result = new HashMap<>();
         result.put("grade", grade);
         result.put("confidence", confidence);
         return result;
+    }
+
+    // ✅ Kept for backward compatibility
+    public Map<String, Object> predictQuality(String imagePath) throws IOException {
+        return predictQuality(imagePath, guessCropFromFilename(imagePath));
+    }
+
+    // ✅ Normalize crop name entered by farmer (e.g. "Carrot" -> "carrot")
+    private String normalizeCropName(String cropName) {
+        if (cropName == null) return "unknown";
+        String name = cropName.trim().toLowerCase();
+        if (name.contains("carrot"))     return "carrot";
+        if (name.contains("mango"))      return "mango";
+        if (name.contains("tomato"))     return "tomato";
+        if (name.contains("apple"))      return "apple";
+        if (name.contains("banana"))     return "banana";
+        if (name.contains("potato"))     return "potato";
+        if (name.contains("onion"))      return "onion";
+        if (name.contains("orange") || name.contains("kinnow")) return "orange";
+        if (name.contains("grape"))      return "grape";
+        if (name.contains("watermelon")) return "watermelon";
+        if (name.contains("rice"))       return "rice";
+        if (name.contains("wheat"))      return "wheat";
+        if (name.contains("corn"))       return "corn";
+        return "unknown";
     }
 
     private String guessCropFromFilename(String path) {
@@ -68,39 +96,41 @@ public class AiService {
             } else {
                 name = Path.of(path).getFileName().toString().toLowerCase();
             }
-            if (name.contains("mango"))  return "mango";
-            if (name.contains("tomato")) return "tomato";
-            if (name.contains("apple"))  return "apple";
-            if (name.contains("banana")) return "banana";
-            if (name.contains("potato")) return "potato";
-            if (name.contains("carrot")) return "carrot";
-            if (name.contains("orange") || name.contains("kinnow")) return "orange";
+            return normalizeCropName(name);
         } catch (Exception ignored) {}
         return "unknown";
     }
 
-    private String determineGrade(String crop, double red, double green, double yellow, double orange, double bad, double uniform) {
-        // Only fail if there are significant actual dark spots on the crop itself
+    private String determineGrade(String crop, double red, double green, double yellow, double orange, double purple, double bad, double uniform) {
         boolean hasDamage = bad > 0.35 || uniform < 0.25;
         if (hasDamage) return "C";
 
         return switch (crop) {
             case "carrot" ->
-                    orange > 0.35 && uniform > 0.55 ? (random.nextDouble() < 0.5 ? "A+" : "A")
-                            : orange > 0.20 ? "B+" : "B";
+                    orange > 0.30 && uniform > 0.50 ? (random.nextDouble() < 0.5 ? "A+" : "A")
+                            : orange > 0.15 ? "B+" : "B";
+            case "onion" ->
+                    purple + red > 0.30 && uniform > 0.55 ? (random.nextDouble() < 0.4 ? "A+" : "A")
+                            : purple + red > 0.15 ? "B+" : "B";
             case "mango", "tomato", "apple" ->
-                    red + yellow > 0.55 && uniform > 0.6 ? (random.nextDouble() < 0.4 ? "A+" : "A")
+                    red + yellow > 0.55 && uniform > 0.60 ? (random.nextDouble() < 0.4 ? "A+" : "A")
                             : red + yellow > 0.35 ? "B+" : green > 0.5 ? "C" : "B";
             case "banana" ->
-                    yellow > 0.6 && uniform > 0.65 ? "A+" : yellow > 0.4 ? "A" : "B+";
+                    yellow > 0.60 && uniform > 0.65 ? "A+" : yellow > 0.40 ? "A" : "B+";
             case "potato" ->
-                    bad < 0.1 && uniform > 0.6 ? "A" : "B";
+                    bad < 0.10 && uniform > 0.60 ? "A" : "B";
             case "orange" ->
-                    orange + red + yellow > 0.6 ? "A+" : orange + red + yellow > 0.4 ? "A" : "B+";
+                    orange + red + yellow > 0.60 ? "A+" : orange + red + yellow > 0.40 ? "A" : "B+";
+            case "grape" ->
+                    purple > 0.25 && uniform > 0.55 ? "A+" : purple > 0.15 ? "A" : "B+";
+            case "watermelon" ->
+                    green > 0.25 && uniform > 0.55 ? "A" : "B+";
+            case "rice", "wheat", "corn" ->
+                    yellow > 0.30 && uniform > 0.55 ? "A" : uniform > 0.45 ? "B+" : "B";
             default ->
-                    red + yellow + orange > 0.45 && uniform > 0.55
+                    red + yellow + orange + purple > 0.40 && uniform > 0.50
                             ? (random.nextDouble() < 0.35 ? "A+" : "A")
-                            : uniform > 0.5 ? "B+" : "B";
+                            : uniform > 0.45 ? "B+" : "B";
         };
     }
 
@@ -130,7 +160,6 @@ public class AiService {
         return sampleRatio(img, c -> c.getRed() > 160 && c.getGreen() > 160 && c.getBlue() < 120);
     }
 
-    // Orange: high red, medium green, low blue
     private double calculateOrangeRatio(BufferedImage img) {
         return sampleRatio(img, c ->
                 c.getRed() > 180
@@ -139,12 +168,20 @@ public class AiService {
                 && c.getRed() > c.getGreen() + 30);
     }
 
-    // Crop pixel ratio: pixels that are NOT very dark background
+    // Purple/violet for onions, grapes
+    private double calculatePurpleRatio(BufferedImage img) {
+        return sampleRatio(img, c ->
+                c.getRed() > 100 && c.getRed() < 220
+                && c.getBlue() > 80
+                && c.getGreen() < 120
+                && c.getRed() > c.getGreen() + 20
+                && c.getBlue() > c.getGreen() - 20);
+    }
+
     private double calculateCropPixelRatio(BufferedImage img) {
         return sampleRatio(img, c -> (c.getRed() + c.getGreen() + c.getBlue()) / 3 > 60);
     }
 
-    // Brown/black ratio adjusted for background coverage
     private double calculateBrownBlackRatio(BufferedImage img, double cropRatio) {
         double rawDark = sampleRatio(img, c -> (c.getRed() + c.getGreen() + c.getBlue()) / 3 < 60);
         return cropRatio > 0.1 ? rawDark * (1.0 - cropRatio * 0.6) : rawDark;
