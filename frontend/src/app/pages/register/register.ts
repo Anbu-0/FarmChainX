@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
+import { environment } from '../../../environments/environment'; // ← ADD THIS
 
 @Component({
   standalone: true,
@@ -23,8 +24,7 @@ export class Register {
       alert('Please select a role');
       return;
     }
-
-    this.http.post('${environment.apiUrl}/auth/register', {
+    this.http.post(`${environment.apiUrl}/auth/register`, { // ← backtick, not quote
       name: this.name,
       email: this.email,
       password: this.password,
@@ -34,10 +34,10 @@ export class Register {
         alert('Registration successful 🎉');
         this.router.navigate(['/login']);
       },
-    error: (err) => {
-  console.log("REGISTER ERROR →", err);
-  alert(JSON.stringify(err.error));
-    }
+      error: (err) => {
+        console.log("REGISTER ERROR →", err);
+        alert(JSON.stringify(err.error));
+      }
     });
   }
 }
