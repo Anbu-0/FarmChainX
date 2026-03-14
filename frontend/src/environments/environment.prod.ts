@@ -1,5 +1,5 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://farmchainx-2-x3f2.onrender.com',  
+  apiUrl: 'https://farmchainx-2-x3f2.onrender.com/api',
   name: 'production'
 };
