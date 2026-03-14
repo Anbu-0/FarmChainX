@@ -39,7 +39,6 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    // ✅ NEW: CORS configuration bean
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -59,7 +58,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ NEW
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(ex -> ex
@@ -75,9 +74,9 @@ public class SecurityConfig {
                 })
             )
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // ✅ NEW
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // Public routes
-                .requestMatchers("/auth/**").permitAll()  // ← was /api/auth/**
+                .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/error", "/actuator/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/uploads/**").permitAll()
