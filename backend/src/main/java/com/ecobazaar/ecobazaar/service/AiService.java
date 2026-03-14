@@ -77,7 +77,8 @@ public class AiService {
     }
 
     private String determineGrade(String crop, double red, double green, double yellow, double bad, double uniform) {
-        boolean hasDamage = bad > 0.18 || uniform < 0.45;
+        // Raised thresholds so real crop photos don't always get C
+        boolean hasDamage = bad > 0.30 || uniform < 0.30;
         if (hasDamage) return "C";
 
         return switch (crop) {
@@ -95,14 +96,17 @@ public class AiService {
     private double calculateConfidence(String grade, double badSpots, double uniform) {
         double base = switch (grade) {
             case "A+" -> 0.945;
-            case "A" -> 0.905;
+            case "A"  -> 0.905;
             case "B+" -> 0.855;
-            case "B" -> 0.795;
-            case "C" -> 0.720;
-            default -> 0.720;
+            case "B"  -> 0.795;
+            case "C"  -> 0.720;
+            default   -> 0.720;
         };
-        double penalty = badSpots * 0.4 + (1 - uniform) * 0.2;
-        return Math.round((base - penalty + random.nextDouble() * 0.04) * 10000.0) / 10000.0;
+        // Reduced penalty weights to prevent near-zero confidence
+        double penalty = badSpots * 0.2 + (1 - uniform) * 0.1;
+        double result = base - penalty + random.nextDouble() * 0.04;
+        // Always return at least 0.5 confidence
+        return Math.round(Math.max(0.5, result) * 10000.0) / 10000.0;
     }
 
     private double calculateRedRatio(BufferedImage img) {
@@ -122,7 +126,9 @@ public class AiService {
     }
 
     private double calculateUniformity(BufferedImage img) {
-        return 1.0 - calculateBrownBlackRatio(img) * 0.7 - Math.abs(calculateRedRatio(img) - 0.5) * 0.3;
+        // Based only on dark/damaged spots, not red ratio
+        double badRatio = calculateBrownBlackRatio(img);
+        return Math.max(0.0, 1.0 - badRatio * 1.5);
     }
 
     private double sampleRatio(BufferedImage img, ColorCheck check) {
