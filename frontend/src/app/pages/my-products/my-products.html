@@ -72,7 +72,7 @@
             <div class="backdrop-blur-xl bg-gradient-to-br from-emerald-500/90 to-teal-600/90 px-12 py-8 rounded-3xl border-4 border-white/30 shadow-2xl">
               <div class="text-8xl font-black">{{ p.qualityGrade || 'A+' }}</div>
               <div class="text-xl font-bold text-emerald-200">
-                AI Certified • {{ p.confidenceScore | number:'1.0-0' }}% Confidence
+                AI Certified • {{ (p.confidenceScore * 100) | number:'1.0-0' }}% Confidence
               </div>
             </div>
           </div>
