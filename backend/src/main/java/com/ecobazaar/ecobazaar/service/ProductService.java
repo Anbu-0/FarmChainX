@@ -16,7 +16,7 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; // ✅ use Spring’s version
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.client.RestTemplate;
 
@@ -57,8 +57,9 @@ public class ProductService {
                 throw new IllegalStateException("Image path missing for grading");
             }
 
-            // ✅ Let AiService handle URL or local file. Do NOT pre-check with File.exists() here.
-            Map<String, Object> aiResult = aiService.predictQuality(path);
+            // ✅ Pass cropName directly so AI doesn't guess from filename
+            String cropName = saved.getCropName();
+            Map<String, Object> aiResult = aiService.predictQuality(path, cropName);
 
             if (aiResult != null && aiResult.get("grade") != null && aiResult.get("confidence") != null) {
                 saved.setQualityGrade(String.valueOf(aiResult.get("grade")));
@@ -68,7 +69,6 @@ public class ProductService {
                 throw new IllegalStateException("AI returned empty result");
             }
         } catch (Exception e) {
-            // Non-fatal: keep the product, leave grading as pending
             System.err.println("[AI Grading Error] " + e.getClass().getSimpleName() + ": " + e.getMessage());
             return saved;
         }
@@ -102,23 +102,18 @@ public class ProductService {
         String qrText = frontendBase + "/verify/" + publicUuid;
         try {
             String fileName = "qr_" + publicUuid + ".png";
-			// create temp file
             Path tempFile = Files.createTempFile("qr_", ".png");
-			// generate QR into temp file
-			QrCodeGenerator.generateQR(qrText, tempFile.toString());
-			// upload to Cloudinary
+            QrCodeGenerator.generateQR(qrText, tempFile.toString());
             Map uploadResult = cloudinary.uploader().upload(
                  tempFile.toFile(),
                  ObjectUtils.asMap("folder", "farmchainx/qrcodes")
                             );
-			String qrUrl = uploadResult.get("secure_url").toString();
-			// save Cloudinary URL
-			product.setQrCodePath(qrUrl);
-			productRepository.save(product);
-			// delete temp file
-			Files.deleteIfExists(tempFile);
-			return qrUrl;
-			
+            String qrUrl = uploadResult.get("secure_url").toString();
+            product.setQrCodePath(qrUrl);
+            productRepository.save(product);
+            Files.deleteIfExists(tempFile);
+            return qrUrl;
+
         } catch (Exception e) {
             throw new RuntimeException("Error generating QR code: " + e.getMessage(), e);
         }
