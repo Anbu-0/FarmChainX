@@ -11,19 +11,15 @@ html, body {
   overflow-x: hidden;
   /* Dark fallback so no white ever bleeds through on short pages */
   background-color: #0a1a0d !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Ensure app-root covers full viewport with dark base */
 app-root {
-  display: flex;
-  flex-direction: column;
+  display: block;
   min-height: 100dvh;
   background-color: #0a1a0d;
-}
-
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 app-root button {
@@ -32,15 +28,18 @@ app-root button {
   cursor: pointer;
 }
 
-/* Main content area always fills remaining viewport height */
-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+/* Navbar fixed at top — always visible on scroll */
+app-navbar nav {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
 }
 
-main > * {
-  flex: 1;
+/* Push all page content below the fixed navbar (navbar is h-20 = 80px) */
+main {
+  padding-top: 80px;
 }
 
 @keyframes blob {
