@@ -15,7 +15,8 @@ html, body {
 
 /* Ensure app-root covers full viewport with dark base */
 app-root {
-  display: block;
+  display: flex;
+  flex-direction: column;
   min-height: 100dvh;
   background-color: #0a1a0d;
 }
@@ -29,6 +30,17 @@ app-root button {
   all: unset;
   display: inline-block;
   cursor: pointer;
+}
+
+/* Main content area always fills remaining viewport height */
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+main > * {
+  flex: 1;
 }
 
 @keyframes blob {
