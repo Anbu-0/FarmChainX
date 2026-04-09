@@ -16,31 +16,55 @@ import java.net.URLConnection;
 @Service
 public class AiService {
 
-    private static final String[] GRADES = {"A+", "A", "B+", "B", "C"};
     private final Random random = new Random();
 
-    // ✅ New method: accepts cropName directly from product data
     public Map<String, Object> predictQuality(String imagePath, String cropName) throws IOException {
+
+        // ❌ Block WEBP (main crash reason)
+        if (imagePath != null && imagePath.toLowerCase().endsWith(".webp")) {
+            throw new IOException("WEBP not supported. Use JPG or PNG.");
+        }
+
         BufferedImage img;
 
-        if (imagePath != null && (imagePath.startsWith("http://") || imagePath.startsWith("https://"))) {
-            URL url = new URL(imagePath);
-            URLConnection conn = url.openConnection();
-            conn.setConnectTimeout(5000);
-            conn.setReadTimeout(10000);
-            try (var in = conn.getInputStream()) {
-                img = ImageIO.read(in);
+        try {
+            if (imagePath != null && (imagePath.startsWith("http://") || imagePath.startsWith("https://"))) {
+
+                URL url = new URL(imagePath);
+                URLConnection conn = url.openConnection();
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(10000);
+
+                try (var in = conn.getInputStream()) {
+                    img = ImageIO.read(in);
+                }
+
+            } else {
+                File file = new File(imagePath);
+
+                // 🚫 File size limit (2MB)
+                if (file.length() > 2 * 1024 * 1024) {
+                    throw new IOException("Image too large (Max 2MB)");
+                }
+
+                img = ImageIO.read(file);
             }
-        } else {
-            img = ImageIO.read(new File(imagePath));
+
+        } catch (OutOfMemoryError e) {
+            throw new IOException("Image too large or unsupported format");
         }
 
-        if (img == null) throw new IOException("Unsupported image format for: " + imagePath);
-
-        if (img.getWidth() > 800) {
-            img = resizeImage(img, 800);
+        if (img == null) {
+            throw new IOException("Unsupported image format");
         }
 
+        // ⚡ ALWAYS resize to small size (BIG FIX)
+        img = resizeImage(img, 224);
+
+        // 🧹 Help GC in low-memory servers (Render)
+        System.gc();
+
+        // Feature extraction
         double redRatio        = calculateRedRatio(img);
         double greenRatio      = calculateGreenRatio(img);
         double yellowRatio     = calculateYellowRatio(img);
@@ -50,7 +74,6 @@ public class AiService {
         double brownBlackRatio = calculateBrownBlackRatio(img, cropPixelRatio);
         double uniformity      = calculateUniformity(brownBlackRatio);
 
-        // ✅ Use cropName passed directly — no filename guessing needed
         String cropHint = normalizeCropName(cropName);
         String grade = determineGrade(cropHint, redRatio, greenRatio, yellowRatio, orangeRatio, purpleRatio, brownBlackRatio, uniformity);
         double confidence = calculateConfidence(grade, brownBlackRatio, uniformity);
@@ -58,38 +81,39 @@ public class AiService {
         Map<String, Object> result = new HashMap<>();
         result.put("grade", grade);
         result.put("confidence", confidence);
+
         return result;
     }
 
-    // ✅ Kept for backward compatibility
     public Map<String, Object> predictQuality(String imagePath) throws IOException {
         return predictQuality(imagePath, guessCropFromFilename(imagePath));
     }
 
-    // ✅ Normalize crop name entered by farmer (e.g. "Carrot" -> "carrot")
     private String normalizeCropName(String cropName) {
         if (cropName == null) return "unknown";
         String name = cropName.trim().toLowerCase();
-        if (name.contains("carrot"))     return "carrot";
-        if (name.contains("mango"))      return "mango";
-        if (name.contains("tomato"))     return "tomato";
-        if (name.contains("apple"))      return "apple";
-        if (name.contains("banana"))     return "banana";
-        if (name.contains("potato"))     return "potato";
-        if (name.contains("onion"))      return "onion";
+
+        if (name.contains("carrot")) return "carrot";
+        if (name.contains("mango")) return "mango";
+        if (name.contains("tomato")) return "tomato";
+        if (name.contains("apple")) return "apple";
+        if (name.contains("banana")) return "banana";
+        if (name.contains("potato")) return "potato";
+        if (name.contains("onion")) return "onion";
         if (name.contains("orange") || name.contains("kinnow")) return "orange";
-        if (name.contains("grape"))      return "grape";
+        if (name.contains("grape")) return "grape";
         if (name.contains("watermelon")) return "watermelon";
-        if (name.contains("rice"))       return "rice";
-        if (name.contains("wheat"))      return "wheat";
-        if (name.contains("corn"))       return "corn";
+        if (name.contains("rice")) return "rice";
+        if (name.contains("wheat")) return "wheat";
+        if (name.contains("corn")) return "corn";
+
         return "unknown";
     }
 
     private String guessCropFromFilename(String path) {
         try {
             String name;
-            if (path != null && (path.startsWith("http://") || path.startsWith("https://"))) {
+            if (path != null && path.startsWith("http")) {
                 String p = new URL(path).getPath();
                 int slash = p.lastIndexOf('/');
                 name = (slash >= 0 ? p.substring(slash + 1) : p).toLowerCase();
@@ -143,9 +167,26 @@ public class AiService {
             case "C"  -> 0.720;
             default   -> 0.720;
         };
+
         double penalty = badSpots * 0.15 + (1 - uniform) * 0.08;
         double result = base - penalty + random.nextDouble() * 0.04;
+
         return Math.round(Math.max(0.5, result) * 10000.0) / 10000.0;
+    }
+
+    private double sampleRatio(BufferedImage img, ColorCheck check) {
+        long match = 0;
+        int total = 0;
+
+        for (int x = 0; x < img.getWidth(); x += 12) {
+            for (int y = 0; y < img.getHeight(); y += 12) {
+                Color c = new Color(img.getRGB(x, y));
+                if (check.test(c)) match++;
+                total++;
+            }
+        }
+
+        return total == 0 ? 0.5 : (double) match / total;
     }
 
     private double calculateRedRatio(BufferedImage img) {
@@ -162,20 +203,17 @@ public class AiService {
 
     private double calculateOrangeRatio(BufferedImage img) {
         return sampleRatio(img, c ->
-                c.getRed() > 180
-                && c.getGreen() > 80 && c.getGreen() < 180
-                && c.getBlue() < 80
-                && c.getRed() > c.getGreen() + 30);
+                c.getRed() > 180 &&
+                c.getGreen() > 80 && c.getGreen() < 180 &&
+                c.getBlue() < 80 &&
+                c.getRed() > c.getGreen() + 30);
     }
 
-    // Purple/violet for onions, grapes
     private double calculatePurpleRatio(BufferedImage img) {
         return sampleRatio(img, c ->
-                c.getRed() > 100 && c.getRed() < 220
-                && c.getBlue() > 80
-                && c.getGreen() < 120
-                && c.getRed() > c.getGreen() + 20
-                && c.getBlue() > c.getGreen() - 20);
+                c.getRed() > 100 && c.getRed() < 220 &&
+                c.getBlue() > 80 &&
+                c.getGreen() < 120);
     }
 
     private double calculateCropPixelRatio(BufferedImage img) {
@@ -191,26 +229,14 @@ public class AiService {
         return Math.max(0.0, 1.0 - brownBlackRatio * 1.2);
     }
 
-    private double sampleRatio(BufferedImage img, ColorCheck check) {
-        long match = 0;
-        int total = 0;
-        for (int x = 0; x < img.getWidth(); x += 8) {
-            for (int y = 0; y < img.getHeight(); y += 8) {
-                Color c = new Color(img.getRGB(x, y));
-                if (check.test(c)) match++;
-                total++;
-            }
-        }
-        return total == 0 ? 0.5 : (double) match / total;
-    }
+    private BufferedImage resizeImage(BufferedImage original, int size) {
+        Image scaled = original.getScaledInstance(size, size, Image.SCALE_SMOOTH);
+        BufferedImage resized = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
 
-    private BufferedImage resizeImage(BufferedImage original, int maxWidth) {
-        int newHeight = (int) (original.getHeight() * ((double) maxWidth / original.getWidth()));
-        Image scaled = original.getScaledInstance(maxWidth, newHeight, Image.SCALE_SMOOTH);
-        BufferedImage resized = new BufferedImage(maxWidth, newHeight, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = resized.createGraphics();
         g.drawImage(scaled, 0, 0, null);
         g.dispose();
+
         return resized;
     }
 
