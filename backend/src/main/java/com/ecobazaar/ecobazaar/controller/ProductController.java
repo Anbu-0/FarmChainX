@@ -27,6 +27,8 @@ import com.ecobazaar.ecobazaar.repository.ProductRepository;
 import com.ecobazaar.ecobazaar.repository.FeedbackRepository;
 import com.ecobazaar.ecobazaar.repository.SupplyChainLogRepository;
 import com.ecobazaar.ecobazaar.util.HashUtil;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 
 
 @RestController
@@ -38,17 +40,20 @@ public class ProductController {
     private final UserRepository userRepository;
     private final SupplyChainLogRepository supplyChainLogRepository;
     private final FeedbackRepository feedbackRepository;
+    private final Cloudinary cloudinary;
 
     public ProductController(ProductService productService,
                              UserRepository userRepository,
                              ProductRepository productRepository,
                              SupplyChainLogRepository supplyChainLogRepository,
-                             FeedbackRepository feedbackRepository) {
+                             FeedbackRepository feedbackRepository,
+                             Cloudinary cloudinary) {
         this.productService = productService;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
         this.supplyChainLogRepository = supplyChainLogRepository;
         this.feedbackRepository = feedbackRepository;
+        this.cloudinary = cloudinary;
     }
 
     @PostMapping("/products/upload")
@@ -70,14 +75,11 @@ public class ProductController {
             User farmer = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Farmer not found"));
 
-            com.cloudinary.Cloudinary cloudinary = new com.cloudinary.Cloudinary(
-                    "cloudinary://893825318738397:CKsCDkC9Pse0fXBsOuwrIoWYxSc@dkuiluszr"
-                );
-                java.util.Map uploadResult = cloudinary.uploader().upload(
+            java.util.Map uploadResult = cloudinary.uploader().upload(
                     imageFile.getBytes(),
-                    com.cloudinary.utils.ObjectUtils.asMap("folder", "farmchainx/products")
-                );
-                String imagePath = uploadResult.get("secure_url").toString();
+                    ObjectUtils.asMap("folder", "farmchainx/products")
+            );
+            String imagePath = uploadResult.get("secure_url").toString();
 
             LocalDate parsedDate = null;
             if (harvestDate != null && !harvestDate.isBlank()) {

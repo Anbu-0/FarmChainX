@@ -25,7 +25,7 @@ import com.ecobazaar.ecobazaar.repository.ProductRepository;
 import com.ecobazaar.ecobazaar.repository.UserRepository;
 import com.ecobazaar.ecobazaar.util.QrCodeGenerator;
 import com.ecobazaar.ecobazaar.model.SupplyChainLog;
-import com.ecobazaar.ecobazaar.repository.SupplyChainLogRepository;;
+import com.ecobazaar.ecobazaar.repository.SupplyChainLogRepository;
 
 @Service
 public class ProductService {

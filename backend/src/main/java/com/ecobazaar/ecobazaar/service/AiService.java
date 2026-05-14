@@ -20,9 +20,13 @@ public class AiService {
 
     public Map<String, Object> predictQuality(String imagePath, String cropName) throws IOException {
 
-        // ❌ Block WEBP (main crash reason)
-        if (imagePath != null && imagePath.toLowerCase().endsWith(".webp")) {
-            throw new IOException("WEBP not supported. Use JPG or PNG.");
+        // ✅ Cloudinary URL: force JPG format via URL transformation (handles webp too)
+        // ✅ Local file: block .webp since ImageIO can't decode it
+        if (imagePath != null && imagePath.contains("cloudinary.com")) {
+            // f_jpg converts ANY format (including webp) to JPEG before we download it
+            imagePath = imagePath.replaceFirst("/upload/", "/upload/f_jpg,q_80/");
+        } else if (imagePath != null && imagePath.toLowerCase().endsWith(".webp")) {
+            throw new IOException("WEBP not supported for local files. Use JPG or PNG.");
         }
 
         BufferedImage img;
@@ -34,6 +38,8 @@ public class AiService {
                 URLConnection conn = url.openConnection();
                 conn.setConnectTimeout(5000);
                 conn.setReadTimeout(10000);
+                // Identify as browser so CDN returns image data
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0");
 
                 try (var in = conn.getInputStream()) {
                     img = ImageIO.read(in);
@@ -55,14 +61,15 @@ public class AiService {
         }
 
         if (img == null) {
-            throw new IOException("Unsupported image format");
+            throw new IOException("Unsupported image format — could not decode image from: " + imagePath);
         }
 
-        // ⚡ ALWAYS resize to small size (BIG FIX)
-        img = resizeImage(img, 224);
-
-        // 🧹 Help GC in low-memory servers (Render)
-        System.gc();
+        // ✅ Resize using headless-safe approach (SCALE_SMOOTH breaks on Render/Linux headless)
+        try {
+            img = resizeImage(img, 224);
+        } catch (OutOfMemoryError e) {
+            throw new IOException("Out of memory while processing image");
+        }
 
         // Feature extraction
         double redRatio        = calculateRedRatio(img);
@@ -230,13 +237,14 @@ public class AiService {
     }
 
     private BufferedImage resizeImage(BufferedImage original, int size) {
-        Image scaled = original.getScaledInstance(size, size, Image.SCALE_SMOOTH);
+        // ✅ Headless-safe resize — does NOT use SCALE_SMOOTH which requires AWT display
         BufferedImage resized = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
-
         Graphics2D g = resized.createGraphics();
-        g.drawImage(scaled, 0, 0, null);
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.drawImage(original, 0, 0, size, size, null);
         g.dispose();
-
         return resized;
     }
 

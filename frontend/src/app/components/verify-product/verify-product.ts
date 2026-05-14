@@ -78,7 +78,16 @@ export class VerifyProduct implements OnInit {
           );
         }
         this.product = data;
-        this.displayLocation = data.displayLocation || data.gpsLocation || 'Protected Location';
+        
+        let loc = data.displayLocation || data.gpsLocation || 'Protected Location';
+        if (typeof loc === 'string' && loc.includes(',')) {
+          // Format long GPS coords like "9.92966816666,78.1056148333" to "9.9297, 78.1056"
+          loc = loc.split(',').map(p => {
+            const n = parseFloat(p);
+            return !isNaN(n) && p.trim() !== '' ? n.toFixed(4) : p.trim();
+          }).join(', ');
+        }
+        this.displayLocation = loc;
         this.consumerCanGiveFeedback = (this.userRole === 'Consumer') && (data.canGiveFeedback === true);
         this.loading = false;
         this.loadFeedbacks();

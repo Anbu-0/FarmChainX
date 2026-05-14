@@ -1,6 +1,6 @@
 {
   "/api": {
-    "target": "https://farmchainx-2-x3f2.onrender.com",
+    "target": "http://localhost:8080",
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"

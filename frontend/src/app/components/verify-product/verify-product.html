@@ -39,14 +39,14 @@
       <div class="flex justify-center -mt-28 mb-16 relative z-10">
         <div class="backdrop-blur-xl bg-gradient-to-br from-emerald-500/90 to-teal-600/90 px-16 py-12 rounded-3xl border-8 border-white/30 shadow-2xl">
           <div class="text-9xl font-black">{{ product.qualityGrade || 'A+' }}</div>
-          <div class="text-2xl font-bold text-emerald-200">AI Certified • {{ product.confidence | number:'1.0-0' }}% Confidence</div>
+          <div class="text-2xl font-bold text-emerald-200">AI Certified • {{ (product.confidence * 100) | number:'1.0-0' }}% Confidence</div>
         </div>
       </div>
 
       <div class="grid md:grid-cols-2 gap-10 px-8 md:px-20 mb-20">
         <div class="backdrop-blur-md bg-white/10 rounded-3xl p-10 text-center border border-white/20">
           <p class="text-gray-400 uppercase tracking-widest mb-6">Farm Origin</p>
-          <p class="text-4xl font-black">{{ displayLocation || 'Protected Location' }}</p>
+          <p class="text-4xl font-black break-all">{{ displayLocation || 'Protected Location' }}</p>
         </div>
         <div class="backdrop-blur-md bg-white/10 rounded-3xl p-10 text-center border border-white/20">
           <p class="text-gray-400 uppercase tracking-widest mb-6">Blockchain ID</p>

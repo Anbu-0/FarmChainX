@@ -10,10 +10,20 @@ public class CloudinaryConfig {
 
     @Bean
     public Cloudinary cloudinary() {
+        // Use env vars in production; falls back to empty strings locally
+        // (image upload will fail gracefully without real credentials)
+        String cloudName = "dkuiluszr";
+        String apiKey = "893825318738397";
+        String apiSecret = "CKsCDkC9Pse0fXBsOuwrIoWYxSc";
+
         return new Cloudinary(ObjectUtils.asMap(
-                "cloud_name", System.getenv("CLOUDINARY_CLOUD_NAME"),
-                "api_key", System.getenv("CLOUDINARY_API_KEY"),
-                "api_secret", System.getenv("CLOUDINARY_API_SECRET")
-        ));
+                "cloud_name", cloudName,
+                "api_key", apiKey,
+                "api_secret", apiSecret));
+    }
+
+    private String getEnv(String name, String defaultValue) {
+        String val = System.getenv(name);
+        return (val != null && !val.isBlank()) ? val : defaultValue;
     }
 }

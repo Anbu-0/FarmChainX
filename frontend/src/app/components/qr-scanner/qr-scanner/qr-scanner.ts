@@ -41,8 +41,10 @@ export class QrScanner {  // ← No "Component" in class name
   onScanError(err: any) { console.error(err); }
   onPermission(granted: boolean) {
     if (!granted) {
-      alert('Camera access denied. Using photo upload instead.');
-      this.usingFileUpload = true;
+      console.warn('Camera access was denied or no camera found.');
+      // We no longer force usingFileUpload = true here,
+      // so the camera box remains visible (though blank)
+      // and the user can still use the file upload below it.
     }
   }
   onCamerasFound(devices: MediaDeviceInfo[]) {
